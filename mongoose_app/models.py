@@ -1,3 +1,4 @@
+from typing import Any, Dict, Tuple
 from django.db import models
 from django.utils.html import mark_safe
 from django.conf import settings
@@ -34,6 +35,11 @@ class Product(models.Model):
             return ""
     image_view.short_description = 'Image View'
     image_view.allow_tags = True
+
+    # Deletes image on removing the product
+    def delete(self, using: Any = None, keep_parents: bool = False) -> Tuple[int, Dict[str, int]]:
+        self.image.storage.delete(self.image.name)
+        return super().delete(using=using, keep_parents=keep_parents)
 
 class ProductTransactions(models.Model):
     product_id = models.ForeignKey(

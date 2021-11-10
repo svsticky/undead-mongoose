@@ -35,12 +35,12 @@ class Transaction(models.Model):
 
 class User(models.Model):
     user_id = models.CharField(max_length=30)
-    balance = product_price = models.FloatField()
+    balance = models.FloatField()
 
 class Cards(models.Model):
     card_id = models.CharField(max_length=8)
     active = models.BooleanField()
-    user = models.ForeignKey(
+    user_id = models.ForeignKey(
         'User',
         on_delete=models.CASCADE,
     )

@@ -1,0 +1,13 @@
+
+# Docker Compose file for a postgres image
+version: "3"
+services:
+  postgres-db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: undead_mongoose
+      POSTGRES_PASSWORD: "mongoose123"
+    
+    ports:
+    - "25840:5432"

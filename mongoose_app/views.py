@@ -41,8 +41,7 @@ def register_card(request):
     Both should be provided in request.
     Then:
     - Ask koala for user info
-    - If user does not exist here, create it BUT MAKE INITIAL BALANCE THE BALANCE CURRENTLY IN KOALA 
-        (temporarily of course until mongoose is out of koala)
+    - If user does not exist here, create it
     - Else add card to user.
     """
     return render(request, "index.html")

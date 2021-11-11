@@ -15,7 +15,7 @@ class Category(models.Model):
 
 class Product(models.Model):
     name = models.CharField(max_length=30)
-    price = models.FloatField()
+    price = models.DecimalField(decimal_places=2, max_digits=6)
     image = models.ImageField()
     category = models.ForeignKey(
         'Category',
@@ -50,7 +50,7 @@ class ProductTransactions(models.Model):
         'Transaction',
         on_delete=models.CASCADE,
     )
-    product_price = models.FloatField()
+    product_price = models.DecimalField(decimal_places=2, max_digits=6)
     amount = models.IntegerField()
 
 class Transaction(models.Model):

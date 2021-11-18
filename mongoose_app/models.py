@@ -2,6 +2,7 @@ from typing import Any, Dict, Tuple
 from django.db import models
 from django.utils.html import mark_safe
 from django.conf import settings
+#from django.utils.translation import Trans
 
 class Category(models.Model):
     name = models.CharField(max_length=30)
@@ -12,6 +13,7 @@ class Category(models.Model):
     
     def __str__(self):
         return self.name
+
 
 class Product(models.Model):
     name = models.CharField(max_length=30)
@@ -41,18 +43,22 @@ class Product(models.Model):
         self.image.storage.delete(self.image.name)
         return super().delete(using=using, keep_parents=keep_parents)
 
+
 class ProductTransactions(models.Model):
     product_id = models.ForeignKey(
         'Product',
         on_delete=models.CASCADE,
     )
     transaction_id = models.ForeignKey(
-        'Transaction',
+        'SaleTransaction',
         on_delete=models.CASCADE,
     )
     product_price = models.DecimalField(decimal_places=2, max_digits=6)
     amount = models.IntegerField()
 
+
+# Every transaction has at least a link with a user, an id and a sum
+# Whether this sum has a negative or positive influence on the total credit depends on the type of transaction
 class Transaction(models.Model):
     user_id = models.ForeignKey(
         'User',
@@ -62,15 +68,45 @@ class Transaction(models.Model):
     transaction_sum = models.FloatField()
     date = models.DateField(auto_now=True)
 
+    # Makes this class abstract which means that there won't be
+    # a literal class for it in the database, do we want this?
+    class Meta:
+        abstract = True
+
     def __str__(self):
         return 'Transaction: ' + str(self.transaction_id)
 
-class User(models.Model):
-    user_id = models.CharField(max_length=30)
-    balance = models.FloatField()
+
+# This transaction is created when a user buys products.
+class SaleTransaction(Transaction):
+
+    # A sale can be cancelled in which case it does not count towards the balance.
+    cancelled = models.BooleanField(default=False)
 
     def __str__(self):
-        return 'User: ' + self.user_id
+        return 'Sale: ' + str(self.transaction_id)
+
+
+# This transaction is created when BESTUUUUUR tops up credit for a member.
+class TopUpTransaction(Transaction):
+
+    # Not sure about this. Could be an option.
+    refunded = models.BooleanField(default=False)
+
+    def __str__(self):
+        return 'Top up: ' + str(self.transaction_id)
+
+
+# User needs name, age and balance to be able to make sense to BESTUUUUUR.
+class User(models.Model):
+    user_id = models.CharField(max_length=30)
+    name = models.CharField(max_length=50)
+    age = models.IntegerField(default=0)
+    balance = models.DecimalField(decimal_places=2, max_digits=6, default=0.00)
+
+    def __str__(self):
+        return 'User: ' + self.name
+
 
 class Cards(models.Model):
     card_id = models.CharField(max_length=8)

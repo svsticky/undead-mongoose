@@ -1,7 +1,8 @@
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Iterable, Optional, Tuple
 from django.db import models
 from django.utils.html import mark_safe
 from django.conf import settings
+from decimal import Decimal
 #from django.utils.translation import Trans
 
 class Category(models.Model):
@@ -65,7 +66,7 @@ class Transaction(models.Model):
         on_delete=models.CASCADE,
     )
     transaction_id = models.CharField(max_length=30)
-    transaction_sum = models.FloatField()
+    transaction_sum = models.DecimalField(max_digits=6, decimal_places=2)
     date = models.DateField(auto_now=True)
 
     # Makes this class abstract which means that there won't be
@@ -94,15 +95,28 @@ class TopUpTransaction(Transaction):
     refunded = models.BooleanField(default=False)
 
     def __str__(self):
-        return 'Top up: ' + str(self.transaction_id)
+        return 'Top up: ' + str(self.transaction_id) + ": " + str(self.user_id.name)
+
+    def save(self, force_insert: bool = False, force_update: bool = False, using: Optional[str] = None, update_fields: Optional[Iterable[str]] = None) -> None:
+        print(type(self.user_id.balance))
+        print(type(self.transaction_sum))
+        self.user_id.balance += self.transaction_sum
+        self.user_id.save(force_insert=force_insert, force_update=force_update, using=using, update_fields=update_fields)
+        return super().save(force_insert=force_insert, force_update=force_update, using=using, update_fields=update_fields)
+    
+    def delete(self, using: Any = None, keep_parents: bool = False) -> Tuple[int, Dict[str, int]]:
+        self.user_id.balance -= self.transaction_sum
+        self.user_id.save()
+        return super().delete(using=using, keep_parents=keep_parents)
+    
 
 
 # User needs name, age and balance to be able to make sense to BESTUUUUUR.
 class User(models.Model):
     user_id = models.CharField(max_length=30)
     name = models.CharField(max_length=50)
-    age = models.IntegerField(default=0)
-    balance = models.DecimalField(decimal_places=2, max_digits=6, default=0.00)
+    age = models.IntegerField()
+    balance = models.DecimalField(decimal_places=2, max_digits=6, default=Decimal('0.00'))
 
     def __str__(self):
         return 'User: ' + self.name

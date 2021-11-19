@@ -124,7 +124,10 @@ class User(models.Model):
     balance = models.DecimalField(decimal_places=2, max_digits=6, default=Decimal('0.00'))
 
     def __str__(self):
-        return 'User: ' + self.name
+        return self.name
+
+    def euro_balance(self):
+        return "€{:0.2f}".format(self.balance)
 
 
 class Cards(models.Model):

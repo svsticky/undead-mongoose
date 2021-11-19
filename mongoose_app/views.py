@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
+from .middleware import authenticated
 
 def index(request):
     return render(request, "index.html")
@@ -14,6 +15,7 @@ def get_card(request):
     """
     return render(request, "index.html")
 
+@authenticated
 @require_http_methods(["GET"])
 def get_products(request):
     """

@@ -1,6 +1,9 @@
 from django.shortcuts import render
+from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from .middleware import authenticated
+from .models import Category
+from datetime import datetime
 
 def index(request):
     return render(request, "index.html")
@@ -22,7 +25,15 @@ def get_products(request):
     Simply returns all products in the database
     Should we handle here whether alcoholic products are returned?
     """
-    return render(request, "index.html")
+    now = datetime.now()
+    if now.hour >= 16:
+        categories = Category.objects.all()
+    else:
+        categories = Category.objects.filter(alcoholic=False)
+        
+    
+    serialized_categories = [c.serialize() for c in categories]
+    return JsonResponse(serialized_categories, safe=False)
 
 # POST endpoints
 @require_http_methods(["POST"])

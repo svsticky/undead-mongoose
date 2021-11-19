@@ -8,13 +8,10 @@ def authenticated(f):
     @wraps(f)
     def decorator(*args, **kwargs):
         request = args[0]
-        print(request.headers)
         if not "Authorization" in request.headers.keys():
             return HttpResponse(status=403)
         
         auth_token = request.headers["Authorization"]
-        print("here")
-        print(settings.API_TOKEN)
         if auth_token == settings.API_TOKEN:
             return f(request)
         

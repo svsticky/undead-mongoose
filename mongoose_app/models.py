@@ -7,6 +7,7 @@ from decimal import Decimal
 
 class Category(models.Model):
     name = models.CharField(max_length=30)
+    alcoholic = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Category'
@@ -14,6 +15,13 @@ class Category(models.Model):
     
     def __str__(self):
         return self.name
+
+    def serialize(self) -> dict:
+        products = Product.objects.filter(category=self)
+        return {
+            'name': self.name,
+            'products': [p.serialize() for p in products]
+        }
 
 
 class Product(models.Model):
@@ -43,6 +51,13 @@ class Product(models.Model):
     def delete(self, using: Any = None, keep_parents: bool = False) -> Tuple[int, Dict[str, int]]:
         self.image.storage.delete(self.image.name)
         return super().delete(using=using, keep_parents=keep_parents)
+
+    def serialize(self) -> dict:
+        return {
+            'name': self.name,
+            'price': self.price,
+            'image_url': self.image.url
+        }
 
 
 class ProductTransactions(models.Model):

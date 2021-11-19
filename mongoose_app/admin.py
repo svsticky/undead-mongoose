@@ -13,6 +13,7 @@ admin.site.index_title = "Welcome to Undead Mongoose"
 class TopUpTransactionsInline(admin.TabularInline):
     model = TopUpTransaction
     extra = 1
+    readonly_fields = ['added']
 
 
 class SaleTransactionsInline(admin.TabularInline):

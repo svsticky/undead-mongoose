@@ -93,15 +93,20 @@ class TopUpTransaction(Transaction):
 
     # Not sure about this. Could be an option.
     refunded = models.BooleanField(default=False)
+    added = models.BooleanField(default=False)
 
     def __str__(self):
         return 'Top up: ' + str(self.transaction_id) + ": " + str(self.user_id.name)
 
     def save(self, force_insert: bool = False, force_update: bool = False, using: Optional[str] = None, update_fields: Optional[Iterable[str]] = None) -> None:
-        print(type(self.user_id.balance))
-        print(type(self.transaction_sum))
-        self.user_id.balance += self.transaction_sum
-        self.user_id.save(force_insert=force_insert, force_update=force_update, using=using, update_fields=update_fields)
+        if not self.added and not self.refunded:
+            self.user_id.balance += self.transaction_sum
+            self.user_id.save()
+            self.added = True
+        elif self.added and self.refunded:
+            self.user_id.balance -= self.transaction_sum
+            self.user_id.save()
+            self.added = False
         return super().save(force_insert=force_insert, force_update=force_update, using=using, update_fields=update_fields)
     
     def delete(self, using: Any = None, keep_parents: bool = False) -> Tuple[int, Dict[str, int]]:

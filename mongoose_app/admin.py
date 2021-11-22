@@ -15,7 +15,6 @@ class TopUpTransactionsInline(admin.TabularInline):
     extra = 1
     readonly_fields = ['added']
 
-
 class SaleTransactionsInline(admin.TabularInline):
     model = SaleTransaction
 
@@ -24,7 +23,7 @@ class SaleTransactionsInline(admin.TabularInline):
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    fields = ('user_id', 'name', 'age', )
+    fields = ('user_id', 'name', 'age', 'euro_balance')
     list_display = ('name', 'age', 'euro_balance')
     readonly_fields = ['euro_balance']
     exclude = ['balance']
@@ -53,5 +52,5 @@ class SaleTransactionAdmin(admin.ModelAdmin):
 @admin.register(TopUpTransaction)
 class TopUpTransactionAdmin(admin.ModelAdmin):
     
-    fields = ('user_id', 'transaction_id', 'transaction_sum', 'refunded')
+    fields = ('user_id', 'transaction_id', 'transaction_sum')
     readonly_fields = ['date']

@@ -1,7 +1,7 @@
 from typing import Optional
 from django.contrib import admin
 from django.http.request import HttpRequest
-from .models import Product, Category, SaleTransaction, TopUpTransaction, Transaction, User
+from .models import Product, Category, SaleTransaction, TopUpTransaction, User, Card
 
 # Register your models here.
 
@@ -54,3 +54,8 @@ class TopUpTransactionAdmin(admin.ModelAdmin):
     
     fields = ('user_id', 'transaction_id', 'transaction_sum')
     readonly_fields = ['date']
+
+@admin.register(Card)
+class CardAdmin(admin.ModelAdmin):
+
+    fields = ['card_id', 'active', 'user_id']

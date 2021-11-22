@@ -1,14 +1,16 @@
+from django.http.response import Http404, HttpResponse
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from .middleware import authenticated
-from .models import Category
+from .models import Category, Card
 from datetime import datetime
 
 def index(request):
     return render(request, "index.html")
 
 # GET endpoints
+@authenticated
 @require_http_methods(["GET"])
 def get_card(request):
     """
@@ -16,8 +18,16 @@ def get_card(request):
     - Check if card exists, if so obtain user, return user.
     - Else, should return that student number is needed (frontend should go to register page)
     """
-    return render(request, "index.html")
+    if 'uuid' in request.GET:
+        card_uuid = request.GET.get('uuid')
+        card = Card.objects.filter(card_id=card_uuid).first()
+        if card == None:
+            return Http404
+        user = card.user_id
+        return JsonResponse(user.serialize(), safe=False)
+    return HttpResponse(status=400)
 
+#Probably needs a change due to what sloth expects atm.
 @authenticated
 @require_http_methods(["GET"])
 def get_products(request):

@@ -139,8 +139,14 @@ class User(models.Model):
     def euro_balance(self):
         return "€{:0.2f}".format(self.balance)
 
+    def serialize(self) -> dict:
+        return {
+            'name': self.name,
+            'age': self.age,
+            'balance': self.balance,
+        }
 
-class Cards(models.Model):
+class Card(models.Model):
     card_id = models.CharField(max_length=8)
     active = models.BooleanField()
     user_id = models.ForeignKey(

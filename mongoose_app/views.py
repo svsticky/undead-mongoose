@@ -1,10 +1,12 @@
+import json
 from django.http.response import Http404, HttpResponse
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from .middleware import authenticated
-from .models import Category, Card
+from .models import Category, Card, Product, ProductTransactions, SaleTransaction, User
 from datetime import datetime
+from django.views.decorators.csrf import csrf_exempt
 
 def index(request):
     return render(request, "index.html")
@@ -46,6 +48,8 @@ def get_products(request):
     return JsonResponse(serialized_categories, safe=False)
 
 # POST endpoints
+@csrf_exempt
+@authenticated
 @require_http_methods(["POST"])
 def create_transaction(request):
     """
@@ -55,7 +59,39 @@ def create_transaction(request):
     - Create a Transaction object.
     Would the current model setup not create a problem when a product is deleted?
     """
-    return render(request, "index.html")
+    print("JOERT!!!")
+    body = json.loads(request.body.decode('utf-8'))
+    items = body['items']
+    card_id = body['uuid']
+    trans_products = []
+    trans_sum = 0
+    for product in items:
+        p_id = int(product['id'])
+        p_amount = int(product['amount'])
+        db_product = Product.objects.filter(id=p_id).first()
+        trans_sum += db_product.price * p_amount
+        trans_products.append((db_product, p_amount))
+
+    card = Card.objects.filter(card_id=card_id).first()
+    user = card.user_id
+    
+    transaction = SaleTransaction.objects.create(
+        user_id=user, 
+        transaction_sum=trans_sum)
+
+    for product, amount in trans_products:
+        ProductTransactions.objects.create(
+            product_id=product,
+            transaction_id=transaction,
+            product_price=product.price,
+            amount=amount)
+
+    return JsonResponse(
+        {
+            'balance': user.balance
+        },
+        status=201, safe=False,
+        )
 
 @require_http_methods(["POST"])
 def register_card(request):

@@ -54,6 +54,7 @@ class Product(models.Model):
 
     def serialize(self) -> dict:
         return {
+            'id': self.id,
             'name': self.name,
             'price': self.price,
             'image_url': settings.BASE_URL + self.image.url
@@ -80,7 +81,6 @@ class Transaction(models.Model):
         'User',
         on_delete=models.CASCADE,
     )
-    transaction_id = models.CharField(max_length=30)
     transaction_sum = models.DecimalField(max_digits=6, decimal_places=2)
     date = models.DateField(auto_now=True)
 
@@ -97,10 +97,21 @@ class Transaction(models.Model):
 class SaleTransaction(Transaction):
 
     # A sale can be cancelled in which case it does not count towards the balance.
+    added = models.BooleanField(default=False)
     cancelled = models.BooleanField(default=False)
 
     def __str__(self):
-        return 'Sale: ' + str(self.transaction_id)
+        return 'Sale: ' + str(self.id)
+    
+    def save(self, force_insert: bool = False, force_update: bool = False, using: Optional[str] = None, update_fields: Optional[Iterable[str]] = None) -> None:
+        if not self.added and not self.cancelled:
+            self.user_id.balance -= self.transaction_sum
+            self.added = True
+        elif self.added and self.cancelled:
+            self.user_id.balance += self.transaction_sum
+            self.added = False       
+        self.user_id.save()
+        return super().save(force_insert=force_insert, force_update=force_update, using=using, update_fields=update_fields)
 
 
 # This transaction is created when BESTUUUUUR tops up credit for a member.
@@ -110,7 +121,7 @@ class TopUpTransaction(Transaction):
     added = models.BooleanField(default=False)
 
     def __str__(self):
-        return 'Top up: ' + str(self.transaction_id) + ": " + str(self.user_id.name)
+        return 'Top up: ' + str(self.id) + ": " + str(self.user_id.name)
 
     def save(self, force_insert: bool = False, force_update: bool = False, using: Optional[str] = None, update_fields: Optional[Iterable[str]] = None) -> None:
         if not self.added:

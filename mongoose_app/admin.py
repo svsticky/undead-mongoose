@@ -18,6 +18,8 @@ class TopUpTransactionsInline(admin.TabularInline):
 class SaleTransactionsInline(admin.TabularInline):
     model = SaleTransaction
 
+    readonly_fields = ['added']
+
     def has_add_permission(self, request: HttpRequest, obj) -> bool:
         return False
 
@@ -44,6 +46,9 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(SaleTransaction)
 class SaleTransactionAdmin(admin.ModelAdmin):
+
+    fields = ['id', 'user_id', 'transaction_sum']
+    readonly_fields = ['date']
     
     def has_add_permission(self, request: HttpRequest) -> bool:
         return False
@@ -52,7 +57,7 @@ class SaleTransactionAdmin(admin.ModelAdmin):
 @admin.register(TopUpTransaction)
 class TopUpTransactionAdmin(admin.ModelAdmin):
     
-    fields = ('user_id', 'transaction_id', 'transaction_sum')
+    fields = ('id', 'user_id', 'transaction_sum')
     readonly_fields = ['date']
 
 @admin.register(Card)

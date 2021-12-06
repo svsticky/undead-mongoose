@@ -56,7 +56,7 @@ class Product(models.Model):
         return {
             'name': self.name,
             'price': self.price,
-            'image_url': self.image.url
+            'image_url': settings.BASE_URL + self.image.url
         }
 
 

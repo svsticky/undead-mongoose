@@ -59,7 +59,6 @@ def create_transaction(request):
     - Create a Transaction object.
     Would the current model setup not create a problem when a product is deleted?
     """
-    print("JOERT!!!")
     body = json.loads(request.body.decode('utf-8'))
     items = body['items']
     card_id = body['uuid']
@@ -90,8 +89,7 @@ def create_transaction(request):
         {
             'balance': user.balance
         },
-        status=201, safe=False,
-        )
+        status=201, safe=False)
 
 @require_http_methods(["POST"])
 def register_card(request):
@@ -103,4 +101,11 @@ def register_card(request):
     - If user does not exist here, create it
     - Else add card to user.
     """
+    body = json.loads(request.body.decode('utf-8'))
+    student_nr = body['student']
+    card_id = body['uuid']
+
+    # get student info based on student_nr in koala.
+    # then, check if user already exists here,
+    # If not, add, if so, update.
     return render(request, "index.html")

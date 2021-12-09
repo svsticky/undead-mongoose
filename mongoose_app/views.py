@@ -10,6 +10,7 @@ from .models import Category, Card, Product, ProductTransactions, SaleTransactio
 from datetime import datetime, date
 from django.views.decorators.csrf import csrf_exempt
 import requests
+import threading
 
 def index(request):
     return render(request, "index.html")
@@ -121,15 +122,17 @@ def register_card(request):
 
     # Obtain user information from Koala (or any other central member base)
     koala_response = requests.get(
-        settings.USER_URL + '/api/internal/mongoose_user',
+        settings.USER_URL + '/api/internal/member_by_studentid',
         params={
-            'student_number' : student_nr,
-            'token' : settings.USER_TOKEN
+            'student_number' : student_nr
+        },
+        headers={
+            'Authorization' : settings.USER_TOKEN
         }
     )
     # If user is not found in database, we cannot create user here.
-    if koala_response.status_code == 404:
-        return HttpResponse(status=404)
+    if koala_response.status_code == 204:
+        return HttpResponse(status=404) # Sloth expects a 404.
 
     # Get user info.
     koala_response = koala_response.json()
@@ -146,15 +149,14 @@ def register_card(request):
     # Else, we first create the user based on the info from koala.
     else:
         first_name = koala_response['first_name']
+        infix = koala_response['infix']
         last_name = koala_response['last_name']
         born = datetime.strptime(koala_response['birth_date'], '%Y-%m-%d')
-        today = date.today()
-        age = today.year - born.year - ((today.month, today.day) < (born.month, born.day))
         
         user = User.objects.create(
             user_id=user_id, 
-            name=f'{first_name} {last_name}',
-            age=age
+            name=f'{first_name} {infix} {last_name}',
+            birthday=born
         )
         card = Card.objects.create(
             card_id=card_id,
@@ -163,3 +165,51 @@ def register_card(request):
         )
     # If that all succeeds, we return CREATED.
     return HttpResponse(status=201)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def on_webhook(request):
+    thr = threading.Thread(target=async_on_webhook, args=[request])
+    thr.start()
+    return HttpResponse(status=200)
+    
+
+def async_on_webhook(request):
+    print("JOERT")
+    koala_sent = json.loads(request.body.decode('utf-8'))
+
+    if koala_sent['type'] == 'member':
+        user_id = koala_sent['id']
+        print(user_id)
+        user = User.objects.filter(user_id=user_id).first()
+        print(user.user_id)
+        if not user == None:
+            koala_response = requests.get(
+                settings.USER_URL + '/api/internal/member_by_id',
+                params={
+                    'id' : user.user_id
+                },
+                headers= {
+                    'Authorization' : settings.USER_TOKEN
+                }
+            )
+            # TODO: What if this happens?
+            if koala_response.status_code == 204:
+                user.delete()
+            print(koala_response.ok)
+            if koala_response.ok:
+                print(koala_response)
+                koala_response = koala_response.json()
+                first_name = koala_response['first_name']
+                infix = koala_response['infix']
+                last_name = koala_response['last_name']
+                user.name = f'{first_name} {infix} {last_name}'
+                user.birthday = datetime.strptime(koala_response['birth_date'], '%Y-%m-%d')
+                user.save()
+
+    # obtain id from webhook
+    # check on type
+    # get user linked to id
+    # get information from koala through request
+    # update user with that information
+    return HttpResponse(status=200)

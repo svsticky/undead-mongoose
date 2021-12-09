@@ -25,9 +25,9 @@ class SaleTransactionsInline(admin.TabularInline):
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    fields = ('user_id', 'name', 'age', 'euro_balance')
-    list_display = ('name', 'age', 'euro_balance')
-    readonly_fields = ['euro_balance']
+    fields = ('user_id', 'name', 'birthday', 'euro_balance')
+    list_display = ('name', 'birthday', 'euro_balance')
+    readonly_fields = ['euro_balance', 'birthday', 'user_id', 'name']
     exclude = ['balance']
     inlines = [TopUpTransactionsInline, SaleTransactionsInline]
     search_fields = ['name']
@@ -48,7 +48,7 @@ class CategoryAdmin(admin.ModelAdmin):
 class SaleTransactionAdmin(admin.ModelAdmin):
 
     fields = ['id', 'user_id', 'transaction_sum']
-    readonly_fields = ['date']
+    readonly_fields = ['date', 'id']
     
     def has_add_permission(self, request: HttpRequest) -> bool:
         return False
@@ -58,7 +58,7 @@ class SaleTransactionAdmin(admin.ModelAdmin):
 class TopUpTransactionAdmin(admin.ModelAdmin):
     
     fields = ('id', 'user_id', 'transaction_sum')
-    readonly_fields = ['date']
+    readonly_fields = ['date', 'id']
 
 @admin.register(Card)
 class CardAdmin(admin.ModelAdmin):

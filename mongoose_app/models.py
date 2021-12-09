@@ -79,7 +79,8 @@ class ProductTransactions(models.Model):
 class Transaction(models.Model):
     user_id = models.ForeignKey(
         'User',
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True
     )
     transaction_sum = models.DecimalField(max_digits=6, decimal_places=2)
     date = models.DateField(auto_now=True)
@@ -141,7 +142,7 @@ class TopUpTransaction(Transaction):
 class User(models.Model):
     user_id = models.CharField(max_length=30)
     name = models.CharField(max_length=50)
-    age = models.IntegerField()
+    birthday = models.DateField()
     balance = models.DecimalField(decimal_places=2, max_digits=6, default=Decimal('0.00'))
 
     def __str__(self):
@@ -153,7 +154,7 @@ class User(models.Model):
     def serialize(self) -> dict:
         return {
             'name': self.name,
-            'age': self.age,
+            'birthday': self.birthday,
             'balance': self.balance,
         }
 

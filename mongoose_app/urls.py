@@ -12,4 +12,5 @@ urlpatterns = [
     # POST endpoints
     path('transaction', views.create_transaction, name='create_transaction'),
     path('register', views.register_card, name='register_card'),
+    path('catchwebhook', views.on_webhook, name='receive_update')
 ]

@@ -3,10 +3,13 @@ from django.http.response import Http404, HttpResponse
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
+
+from django.conf import settings
 from .middleware import authenticated
 from .models import Category, Card, Product, ProductTransactions, SaleTransaction, User
-from datetime import datetime
+from datetime import datetime, date
 from django.views.decorators.csrf import csrf_exempt
+import requests
 
 def index(request):
     return render(request, "index.html")
@@ -91,6 +94,8 @@ def create_transaction(request):
         },
         status=201, safe=False)
 
+@csrf_exempt
+@authenticated
 @require_http_methods(["POST"])
 def register_card(request):
     """
@@ -101,11 +106,60 @@ def register_card(request):
     - If user does not exist here, create it
     - Else add card to user.
     """
+    # Obtain student number and card uuid from sloth
     body = json.loads(request.body.decode('utf-8'))
     student_nr = body['student']
     card_id = body['uuid']
+    print(body)
 
-    # get student info based on student_nr in koala.
-    # then, check if user already exists here,
-    # If not, add, if so, update.
-    return render(request, "index.html")
+    # Check if card is already present in the database
+    # Cards are FULLY UNIQUE OVER ALL MEMBERS
+    card = Card.objects.filter(card_id=card_id).first()
+    
+    if not card == None:
+        return HttpResponse(status=409)
+
+    # Obtain user information from Koala (or any other central member base)
+    koala_response = requests.get(
+        settings.USER_URL + '/api/internal/mongoose_user',
+        params={
+            'student_number' : student_nr,
+            'token' : settings.USER_TOKEN
+        }
+    )
+    # If user is not found in database, we cannot create user here.
+    if koala_response.status_code == 404:
+        return HttpResponse(status=404)
+
+    # Get user info.
+    koala_response = koala_response.json()
+    user_id = koala_response['id']
+    # Check if user exists.
+    user = User.objects.filter(user_id=user_id).first()
+    # If so, add the card to the already existing user.
+    if not user == None:
+        card = Card.objects.create(
+            card_id=card_id,
+            active=True,
+            user_id=user
+        )
+    # Else, we first create the user based on the info from koala.
+    else:
+        first_name = koala_response['first_name']
+        last_name = koala_response['last_name']
+        born = datetime.strptime(koala_response['birth_date'], '%Y-%m-%d')
+        today = date.today()
+        age = today.year - born.year - ((today.month, today.day) < (born.month, born.day))
+        
+        user = User.objects.create(
+            user_id=user_id, 
+            name=f'{first_name} {last_name}',
+            age=age
+        )
+        card = Card.objects.create(
+            card_id=card_id,
+            active=True,
+            user_id=user
+        )
+    # If that all succeeds, we return CREATED.
+    return HttpResponse(status=201)

@@ -137,3 +137,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'images')
 API_TOKEN = os.getenv('API_TOKEN')
 
 BASE_URL = os.getenv('BASE_URL')
+
+USER_URL = os.getenv('USER_URL')
+USER_TOKEN = os.getenv('USER_TOKEN')

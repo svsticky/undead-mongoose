@@ -33,7 +33,7 @@ def get_card(request):
         return JsonResponse(user.serialize(), safe=False)
     return HttpResponse(status=400)
 
-#Probably needs a change due to what sloth expects atm.
+
 @authenticated
 @require_http_methods(["GET"])
 def get_products(request):
@@ -41,8 +41,16 @@ def get_products(request):
     Simply returns all products in the database
     Should we handle here whether alcoholic products are returned?
     """
+    # Obtain user from card info
+    card_id = request.GET.get('uuid')
+    card = Card.objects.filter(card_id=card_id).first()
+    user = User.objects.filter(user_id=card.user_id.user_id).first()
+    # Calc age of user based on birthday
+    today = date.today()
+    age = today.year - user.birthday.year - ((today.month, today.day) < (user.birthday.month, user.birthday.day))
+
     now = datetime.now()
-    if now.hour >= 16:
+    if now.hour >= 16 and age > 17:
         categories = Category.objects.all()
     else:
         categories = Category.objects.filter(alcoholic=False)

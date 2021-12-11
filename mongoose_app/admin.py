@@ -10,15 +10,28 @@ admin.site.site_title = "Undead Mongoose Admin"
 admin.site.index_title = "Welcome to Undead Mongoose"
 
 
+class ProductInline(admin.TabularInline):
+    model = Product
+    extra = 1
+    fields = ['name', 'price', 'image', 'image_view']
+    readonly_fields = ['image_view']
+
+class CardInline(admin.TabularInline):
+    model = Card
+    extra = 0
+    fields = ['card_id', 'active']
+    readonly_fields = ['card_id']
+
 class TopUpTransactionsInline(admin.TabularInline):
     model = TopUpTransaction
     extra = 1
-    readonly_fields = ['added']
+    fields = ['id', 'transaction_sum', 'added']
+    readonly_fields = ['id', 'added']
 
 class SaleTransactionsInline(admin.TabularInline):
     model = SaleTransaction
-
-    readonly_fields = ['added']
+    fields = ['id', 'transaction_sum', 'added']
+    readonly_fields = ['id', 'transaction_sum', 'added']
 
     def has_add_permission(self, request: HttpRequest, obj) -> bool:
         return False
@@ -29,7 +42,7 @@ class UserAdmin(admin.ModelAdmin):
     list_display = ('name', 'birthday', 'euro_balance')
     readonly_fields = ['euro_balance', 'birthday', 'user_id', 'name']
     exclude = ['balance']
-    inlines = [TopUpTransactionsInline, SaleTransactionsInline]
+    inlines = [TopUpTransactionsInline, SaleTransactionsInline, CardInline]
     search_fields = ['name']
 
 
@@ -42,6 +55,7 @@ class ProductAdmin(admin.ModelAdmin):
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     fields = ['name', 'alcoholic']
+    inlines = [ProductInline]
 
 
 @admin.register(SaleTransaction)

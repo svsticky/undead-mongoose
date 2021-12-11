@@ -50,7 +50,7 @@ def get_products(request):
     age = today.year - user.birthday.year - ((today.month, today.day) < (user.birthday.month, user.birthday.day))
 
     now = datetime.now()
-    if now.hour >= 16 and age > 17:
+    if now.hour > 16 and age > 17:
         categories = Category.objects.all()
     else:
         categories = Category.objects.filter(alcoholic=False)

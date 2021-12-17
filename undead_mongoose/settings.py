@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 
 from pathlib import Path
 import os
+from datetime import time
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -146,7 +147,7 @@ USER_TOKEN = os.getenv('USER_TOKEN')
 CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
 
 CONSTANCE_CONFIG = {
-    'Beer hour': (17, 'Value between 0 and 23. Determines when alcohol may be sold.')
+    'Beer hour': (time(17, 00), 'Value between 0:00 and 23:00. Determines when alcohol may be sold.')
 }
 
 CONSTANCE_DATABASE_PREFIX = 'constance:settings:'

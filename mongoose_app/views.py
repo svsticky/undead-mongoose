@@ -11,6 +11,7 @@ from datetime import datetime, date
 from django.views.decorators.csrf import csrf_exempt
 import requests
 import threading
+from constance import config
 
 def index(request):
     return render(request, "index.html")
@@ -50,7 +51,7 @@ def get_products(request):
     age = today.year - user.birthday.year - ((today.month, today.day) < (user.birthday.month, user.birthday.day))
 
     now = datetime.now()
-    if now.hour > 16 and age > 17:
+    if now.hour > config.BEER_HOUR and age > 17:
         categories = Category.objects.all()
     else:
         categories = Category.objects.filter(alcoholic=False)

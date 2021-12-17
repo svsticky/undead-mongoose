@@ -39,7 +39,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'mongoose_app'
+    'mongoose_app',
+    'mongoose_app.apps.CustomConstance',
+    'constance.backends.database'
 ]
 
 MIDDLEWARE = [
@@ -140,3 +142,11 @@ BASE_URL = os.getenv('BASE_URL')
 
 USER_URL = os.getenv('USER_URL')
 USER_TOKEN = os.getenv('USER_TOKEN')
+
+CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
+
+CONSTANCE_CONFIG = {
+    'Beer hour': (17, 'Value between 0 and 23. Determines when alcohol may be sold.')
+}
+
+CONSTANCE_DATABASE_PREFIX = 'constance:settings:'

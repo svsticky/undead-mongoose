@@ -13,3 +13,6 @@ requests = "*"
 
 [requires]
 python_version = "3.8"
+
+[packages.django-constance]
+extras = [ "database",]

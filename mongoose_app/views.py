@@ -12,6 +12,7 @@ from django.views.decorators.csrf import csrf_exempt
 import requests
 import threading
 from constance import config
+import sentry_sdk
 
 def index(request):
     return render(request, "index.html")

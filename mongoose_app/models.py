@@ -37,8 +37,7 @@ class Product(models.Model):
     vat = models.ForeignKey(
         'VAT',
         on_delete=models.CASCADE,
-        verbose_name="BTW",
-        null=True
+        verbose_name="BTW"
     )
 
     def __str__(self):

@@ -1,7 +1,7 @@
 from typing import Optional
 from django.contrib import admin
 from django.http.request import HttpRequest
-from .models import Product, Category, SaleTransaction, TopUpTransaction, User, Card
+from .models import VAT, Product, Category, ProductTransactions, SaleTransaction, TopUpTransaction, User, Card
 
 # Register your models here.
 
@@ -9,6 +9,18 @@ admin.site.site_header = "Undead Mongoose Admin Platform"
 admin.site.site_title = "Undead Mongoose Admin"
 admin.site.index_title = "Welcome to Undead Mongoose"
 
+
+class ProductTransactionsInline(admin.TabularInline):
+    model = ProductTransactions
+    extra = 0
+    fields = ['product_id', 'transaction_id', 'show_price', 'show_vat', 'amount']
+    readonly_fields = ['product_id', 'transaction_id', 'show_price', 'show_vat', 'amount']
+
+    def has_delete_permission(self, request: HttpRequest, obj = None) -> bool:
+        return False
+
+    def has_add_permission(self, request: HttpRequest, obj) -> bool:
+        return False
 
 class ProductInline(admin.TabularInline):
     model = Product
@@ -48,7 +60,7 @@ class UserAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('name', 'euro', 'category', 'image_view')
+    list_display = ('name', 'euro', 'vat', 'category', 'image_view')
     readonly_fields = ['image_view']
 
 
@@ -63,6 +75,7 @@ class SaleTransactionAdmin(admin.ModelAdmin):
 
     fields = ['id', 'user_id', 'transaction_sum']
     readonly_fields = ['date', 'id']
+    inlines = [ProductTransactionsInline]
     
     def has_add_permission(self, request: HttpRequest) -> bool:
         return False
@@ -78,3 +91,8 @@ class TopUpTransactionAdmin(admin.ModelAdmin):
 class CardAdmin(admin.ModelAdmin):
 
     fields = ['card_id', 'active', 'user_id']
+
+@admin.register(VAT)
+class VATAdmin(admin.ModelAdmin):
+    list_display = ['id', 'percentage_view']
+    readonly_fields = ['id']

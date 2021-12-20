@@ -1,8 +1,10 @@
 from typing import Any, Dict, Iterable, Optional, Tuple
+from django.core import validators
 from django.db import models
 from django.utils.html import mark_safe
 from django.conf import settings
 from decimal import Decimal
+from django.core.validators import MaxValueValidator, MinValueValidator
 #from django.utils.translation import Trans
 
 class Category(models.Model):
@@ -31,6 +33,12 @@ class Product(models.Model):
     category = models.ForeignKey(
         'Category',
         on_delete=models.CASCADE,
+    )
+    vat = models.ForeignKey(
+        'VAT',
+        on_delete=models.CASCADE,
+        verbose_name="BTW",
+        null=True
     )
 
     def __str__(self):
@@ -71,8 +79,17 @@ class ProductTransactions(models.Model):
         on_delete=models.CASCADE,
     )
     product_price = models.DecimalField(decimal_places=2, max_digits=6)
+    product_vat = models.IntegerField()
     amount = models.IntegerField()
 
+    def show_vat(self):
+        return str(self.product_vat) + "%"
+
+    def show_price(self):
+        return "€{:0.2f}".format(self.product_price)
+
+    class Meta:
+        verbose_name_plural = "Products"
 
 # Every transaction has at least a link with a user, an id and a sum
 # Whether this sum has a negative or positive influence on the total credit depends on the type of transaction
@@ -102,7 +119,7 @@ class SaleTransaction(Transaction):
     cancelled = models.BooleanField(default=False)
 
     def __str__(self):
-        return 'Sale: ' + str(self.id)
+        return 'Sale ' + str(self.id) + ": " + str(self.user_id.name)
     
     def save(self, force_insert: bool = False, force_update: bool = False, using: Optional[str] = None, update_fields: Optional[Iterable[str]] = None) -> None:
         if not self.added and not self.cancelled:
@@ -165,3 +182,21 @@ class Card(models.Model):
         'User',
         on_delete=models.CASCADE,
     )
+
+class VAT(models.Model):
+    percentage = models.IntegerField(
+        validators=[
+            MinValueValidator(limit_value=0, message="Percentage can't be lower than 0"),
+            MaxValueValidator(limit_value=100, message="Percentage can't be higher than 100")
+        ]
+    )
+    
+    def __str__(self) -> str:
+        return "BTW: " + self.percentage_view()
+
+    def percentage_view(self):
+        return str(self.percentage) + "%"
+
+    class Meta:
+        verbose_name = "BTW percentage"
+        verbose_name_plural = "BTW percentages"

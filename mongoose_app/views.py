@@ -96,6 +96,7 @@ def create_transaction(request):
             product_id=product,
             transaction_id=transaction,
             product_price=product.price,
+            product_vat=product.vat.percentage,
             amount=amount)
 
     return JsonResponse(

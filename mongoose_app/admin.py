@@ -1,6 +1,12 @@
-from typing import Optional
+from datetime import datetime
+import json
+from django.http import JsonResponse
+from django.http.response import HttpResponseRedirect
+from django.urls import path
+from django.utils.safestring import mark_safe
 from django.contrib import admin
 from django.http.request import HttpRequest
+from django.contrib import messages
 from .models import VAT, Product, Category, ProductTransactions, SaleTransaction, TopUpTransaction, User, Card
 
 # Register your models here.
@@ -73,12 +79,36 @@ class CategoryAdmin(admin.ModelAdmin):
 @admin.register(SaleTransaction)
 class SaleTransactionAdmin(admin.ModelAdmin):
 
-    fields = ['id', 'user_id', 'transaction_sum']
+    change_list_template = "admin/saletransactions/st_changelist.html"
+    fields = ['id', 'user_id', 'transaction_sum', 'date']
     readonly_fields = ['date', 'id']
     inlines = [ProductTransactionsInline]
     
     def has_add_permission(self, request: HttpRequest) -> bool:
         return False
+    
+    def get_urls(self):
+        urls = super().get_urls()
+        export_url = [
+            path('export/', self.export)
+        ]
+        return export_url + urls
+    
+    def export(self, request):           
+        date_string = request.body.decode('utf-8').split('&')[1].split('=')[1]
+        if len(date_string) == 0:
+            messages.error(request, "You need to supply an export date!")
+            return HttpResponseRedirect("../")
+        date = datetime.strptime(date_string, '%Y-%m-%d').date()
+        transactions = SaleTransaction.objects.filter(date=date).all()
+        serialized_trans = [t.serialize() for t in transactions]
+        # mark_safe(f"""
+        #     <input text="text" id="submit" value="{json_trans}" style="position: absolute; top: -10000px">
+        #     <a href="#" onclick="document.querySelector(\'#{btn_id}\').select(); document.execCommand(\'copy\');" class="addlink">Copy media url to clipboard</a>
+        #     """
+        # )
+        return JsonResponse(serialized_trans, safe=False)
+
 
 
 @admin.register(TopUpTransaction)

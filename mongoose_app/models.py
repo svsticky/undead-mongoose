@@ -129,6 +129,14 @@ class SaleTransaction(Transaction):
             self.added = False       
         self.user_id.save()
         return super().save(force_insert=force_insert, force_update=force_update, using=using, update_fields=update_fields)
+    
+    def serialize(self):
+        return {
+            'member_id': self.user_id.user_id,
+            'name': self.user_id.name,
+            'price': str(self.transaction_sum),
+            'date': str(self.date)
+        }
 
 
 # This transaction is created when BESTUUUUUR tops up credit for a member.

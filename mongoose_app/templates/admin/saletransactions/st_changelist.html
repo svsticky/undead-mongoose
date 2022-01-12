@@ -1,0 +1,16 @@
+{% extends 'admin/change_list.html' %}
+
+
+{% block object-tools %}
+    <div>
+        <h2>Export sales</h2>
+        <form action="export/" method="POST">
+            {% csrf_token %}
+                <label for="fdate">Export date:</label></br>
+                <input type="date" id="fdate" name="fdate">
+                <button type="submit">Export</button>
+        </form>
+    </div>
+    <br />
+    {{ block.super }}
+{% endblock %}

@@ -147,7 +147,7 @@ USER_TOKEN = os.getenv('USER_TOKEN')
 CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
 
 CONSTANCE_CONFIG = {
-    'Beer hour': (time(17, 00), 'Value between 0:00 and 23:00. Determines when alcohol may be sold.')
+    'BEER_HOUR': (time(17, 00), 'Value between 0:00 and 23:00. Determines when alcohol may be sold.')
 }
 
 CONSTANCE_DATABASE_PREFIX = 'constance:settings:'

@@ -12,7 +12,6 @@ from django.views.decorators.csrf import csrf_exempt
 import requests
 import threading
 from constance import config
-import sentry_sdk
 
 def index(request):
     return render(request, "index.html")
@@ -52,7 +51,7 @@ def get_products(request):
     age = today.year - user.birthday.year - ((today.month, today.day) < (user.birthday.month, user.birthday.day))
 
     now = datetime.now()
-    if now.hour > config.BEER_HOUR and age > 17:
+    if now.time() > config.BEER_HOUR and age > 17:
         categories = Category.objects.all()
     else:
         categories = Category.objects.filter(alcoholic=False)
@@ -160,13 +159,15 @@ def register_card(request):
     # Else, we first create the user based on the info from koala.
     else:
         first_name = koala_response['first_name']
-        infix = koala_response['infix']
+        infix = None
+        if 'infix' in koala_response:
+            infix = koala_response['infix']
         last_name = koala_response['last_name']
         born = datetime.strptime(koala_response['birth_date'], '%Y-%m-%d')
         
         user = User.objects.create(
             user_id=user_id, 
-            name=f'{first_name} {infix} {last_name}',
+            name=f'{first_name} {infix} {last_name}' if infix else f'{first_name} {last_name}',
             birthday=born
         )
         card = Card.objects.create(

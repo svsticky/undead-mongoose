@@ -48,7 +48,6 @@ def migrate_users():
             create_user_with_tegoed(id, balance, name, birthday)
 
 # TODO: use execute_many to insert a whole batch at once and reuse the connection
-# TODO: delete table contents before migration
 def create_user_with_tegoed(id, balance, name, birthday):
     query = f"""
         insert into public.mongoose_app_user(user_id, balance, name, birthday)
@@ -139,7 +138,74 @@ def create_vat():
 
         mongoose_cursor.execute(query)
 
+
+def migrate_products():
+    query = """
+        select name, category, active, price
+        from public.checkout_products;
+    """
+
+    with koala:
+        koala_cursor = koala.cursor()
+
+        koala_cursor.execute(query)
+        
+        for product in koala_cursor.fetchall():
+            name = product[0]
+            category_id = product[1]
+            active = product[2]
+            price = product[3]
+            vat_id = 1 if category_id == 5 else 2
+
+            create_product(name, price, category_id, vat_id)
+
+
+def create_product(name, price, category_id, vat_id):
+    query = f"""
+        insert into public.mongoose_app_product(name, price, category_id, vat_id)
+        values (%s, %s, %s, %s);
+    """
+
+    with mongoose:
+        mongoose_cursor = mongoose.cursor()
+
+        mongoose_cursor.execute(query, (name, price, category_id, vat_id))
+
+
+def clean_database():
+    delete_existing_products = """
+        delete from mongoose_app_product;
+    """
+    delete_existing_vat = """
+        delete from mongoose_app_vat;
+    """
+    
+    delete_existing_categories = """
+        delete from mongoose_app_category;
+    """
+    
+    delete_existing_cards = """
+        delete from mongoose_app_card;
+    """
+
+    delete_existing_users = """
+        delete from mongoose_app_user;
+    """
+
+
+    with mongoose:
+        mongoose_cursor = mongoose.cursor()
+        
+        mongoose_cursor.execute(delete_existing_products)
+        mongoose_cursor.execute(delete_existing_vat)
+        mongoose_cursor.execute(delete_existing_categories)
+        mongoose_cursor.execute(delete_existing_cards)
+        mongoose_cursor.execute(delete_existing_users)
+
+
+clean_database()
 migrate_users()
 migrate_cards()
 create_categories()
 create_vat()
+migrate_products()

@@ -61,6 +61,7 @@ def get_products(request):
     serialized_categories = [c.serialize() for c in categories]
     return JsonResponse(serialized_categories, safe=False)
 
+
 # POST endpoints
 @csrf_exempt
 @authenticated
@@ -105,6 +106,7 @@ def create_transaction(request):
             'balance': user.balance
         },
         status=201, safe=False)
+
 
 @csrf_exempt
 @authenticated
@@ -180,6 +182,24 @@ def register_card(request):
     # If that all succeeds, we return CREATED.
     return HttpResponse(status=201)
 
+
+@require_http_methods(["GET"])
+def confirm_card(request):
+    if 'token' in request.GET:
+        token = request.GET.get('token')
+        card_conf = CardConfirmation.objects.filter(token=token).first()
+        if card_conf:
+            card = card_conf.card
+            card.active = True
+            card.save()
+            card_conf.delete()
+            return HttpResponse('Card confirmed!')
+        else:
+            return HttpResponse('Something went horribly wrong!')
+    else:
+        return HttpResponse('You should not have requested this url')
+
+
 @csrf_exempt
 @require_http_methods(["POST"])
 def on_webhook(request):
@@ -188,8 +208,8 @@ def on_webhook(request):
     return HttpResponse(status=200)
     
 
+
 def async_on_webhook(request):
-    print("JOERT")
     koala_sent = json.loads(request.body.decode('utf-8'))
 
     if koala_sent['type'] == 'member':
@@ -221,12 +241,8 @@ def async_on_webhook(request):
                 user.birthday = datetime.strptime(koala_response['birth_date'], '%Y-%m-%d')
                 user.save()
 
-    # obtain id from webhook
-    # check on type
-    # get user linked to id
-    # get information from koala through request
-    # update user with that information
     return HttpResponse(status=200)
+
 
 # Mailgun send function.
 def send_confirmation(email, card):

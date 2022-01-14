@@ -52,7 +52,7 @@ def migrate_users():
 def create_user_with_tegoed(id, balance, name, birthday):
     query = f"""
         insert into public.mongoose_app_user(user_id, balance, name, birthday)
-        values (%s, %s, %s, %s)
+        values (%s, %s, %s, %s);
     """
 
     with mongoose:
@@ -64,7 +64,7 @@ def create_user_with_tegoed(id, balance, name, birthday):
 def migrate_cards():
     query = """
         select uuid, active, member_id
-        from public.checkout_cards
+        from public.checkout_cards;
     """
 
     with koala:
@@ -85,7 +85,7 @@ def get_userid_by_koala_id(koala_id):
     query = f"""
         select id
         from mongoose_app_user
-        where user_id = '{koala_id}'
+        where user_id = '{koala_id}';
     """
 
     with mongoose:
@@ -100,7 +100,7 @@ def get_userid_by_koala_id(koala_id):
 def create_card(card_id, active, user_id):
     query = f"""
         insert into public.mongoose_app_card(card_id, active, user_id_id)
-        values (%s, %s, %s)
+        values (%s, %s, %s);
     """
 
     with mongoose:
@@ -109,5 +109,37 @@ def create_card(card_id, active, user_id):
         mongoose_cursor.execute(query, (card_id, active, user_id))
 
 
+def create_categories():
+    query = f"""
+        insert into mongoose_app_category(id,name,alcoholic)
+        values
+            (1, 'beverage', false),
+            (2, 'chocolate', false),
+            (3, 'savory', false),
+            (4, 'additional', false),
+            (5, 'liquor', true);
+    """
+
+    with mongoose:
+        mongoose_cursor = mongoose.cursor()
+
+        mongoose_cursor.execute(query)
+
+
+def create_vat():
+    query = f"""
+        insert into mongoose_app_vat(id,percentage)
+        values
+            (1, 9),
+            (2, 21);
+    """
+
+    with mongoose:
+        mongoose_cursor = mongoose.cursor()
+
+        mongoose_cursor.execute(query)
+
 migrate_users()
 migrate_cards()
+create_categories()
+create_vat()

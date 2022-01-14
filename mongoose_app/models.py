@@ -30,7 +30,7 @@ class Category(models.Model):
 class Product(models.Model):
     name = models.CharField(max_length=30)
     price = models.DecimalField(decimal_places=2, max_digits=6)
-    image = models.ImageField()
+    image = models.ImageField(null=True)
     category = models.ForeignKey(
         'Category',
         on_delete=models.CASCADE,
@@ -127,7 +127,7 @@ class SaleTransaction(Transaction):
             self.added = True
         elif self.added and self.cancelled:
             self.user_id.balance += self.transaction_sum
-            self.added = False       
+            self.added = False
         self.user_id.save()
         return super().save(force_insert=force_insert, force_update=force_update, using=using, update_fields=update_fields)
     

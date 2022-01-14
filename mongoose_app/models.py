@@ -1,3 +1,4 @@
+from email.policy import default
 from typing import Any, Dict, Iterable, Optional, Tuple
 from django.core import validators
 from django.db import models
@@ -189,6 +190,14 @@ class Card(models.Model):
         'User',
         on_delete=models.CASCADE,
     )
+
+class CardConfirmation(models.Model):
+    timestamp = models.DateTimeField(auto_now=True)
+    card = models.ForeignKey(
+        'Card',
+        on_delete=models.CASCADE,  
+    )
+    token = models.CharField(max_length=32)
 
 class VAT(models.Model):
     percentage = models.IntegerField(

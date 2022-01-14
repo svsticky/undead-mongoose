@@ -144,6 +144,9 @@ BASE_URL = os.getenv('BASE_URL')
 USER_URL = os.getenv('USER_URL')
 USER_TOKEN = os.getenv('USER_TOKEN')
 
+MAILGUN_ENV = os.getenv('MAILGUN_ENV')
+MAILGUN_TOKEN = os.getenv('MAILGUN_TOKEN')
+
 CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
 
 CONSTANCE_CONFIG = {

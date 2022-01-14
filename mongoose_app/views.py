@@ -1,17 +1,18 @@
 import json
-from django.http.response import Http404, HttpResponse
+from django.http.response import HttpResponse
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
 from django.conf import settings
 from .middleware import authenticated
-from .models import Category, Card, Product, ProductTransactions, SaleTransaction, User
+from .models import CardConfirmation, Category, Card, Product, ProductTransactions, SaleTransaction, User
 from datetime import datetime, date
 from django.views.decorators.csrf import csrf_exempt
 import requests
 import threading
 from constance import config
+import secrets
 
 def index(request):
     return render(request, "index.html")
@@ -27,9 +28,9 @@ def get_card(request):
     """
     if 'uuid' in request.GET:
         card_uuid = request.GET.get('uuid')
-        card = Card.objects.filter(card_id=card_uuid).first()
+        card = Card.objects.filter(card_id=card_uuid, active=True).first()
         if card == None:
-            return Http404
+            return HttpResponse(status=404)
         user = card.user_id
         return JsonResponse(user.serialize(), safe=False)
     return HttpResponse(status=400)
@@ -121,7 +122,6 @@ def register_card(request):
     body = json.loads(request.body.decode('utf-8'))
     student_nr = body['student']
     card_id = body['uuid']
-    print(body)
 
     # Check if card is already present in the database
     # Cards are FULLY UNIQUE OVER ALL MEMBERS
@@ -153,9 +153,10 @@ def register_card(request):
     if not user == None:
         card = Card.objects.create(
             card_id=card_id,
-            active=True,
+            active=False,
             user_id=user
         )
+        send_confirmation(koala_response['email'], card)
     # Else, we first create the user based on the info from koala.
     else:
         first_name = koala_response['first_name']
@@ -172,9 +173,10 @@ def register_card(request):
         )
         card = Card.objects.create(
             card_id=card_id,
-            active=True,
+            active=False,
             user_id=user
         )
+        send_confirmation(koala_response['email'], card)
     # If that all succeeds, we return CREATED.
     return HttpResponse(status=201)
 
@@ -225,3 +227,30 @@ def async_on_webhook(request):
     # get information from koala through request
     # update user with that information
     return HttpResponse(status=200)
+
+# Mailgun send function.
+def send_confirmation(email, card):
+    # build token
+    token = secrets.token_hex(16)
+    CardConfirmation.objects.create(card=card, token=token)
+
+    requests.post(
+        f'https://api.mailgun.net/v3/{settings.MAILGUN_ENV}/messages',
+        auth=('api', settings.MAILGUN_TOKEN),
+        data={
+            'from': f'Undead Mongoose <noreply@{settings.MAILGUN_ENV}>',
+            'to': email,
+            'subject': 'Mongoose Card Confirmation',
+            'text':
+                f"""
+                Beste sticky lid,
+
+                Je hebt zojuist een nieuwe kaart gekoppeld aan het mongoose vreet/zuipsysteem.
+                Om je kaart te koppelen, volg de volgende link:
+                {settings.BASE_URL}/confirm?token={token}
+
+                Met vriendelijke groetjes,
+                BESTUUUUUUUUUUR
+                """
+        }
+    )

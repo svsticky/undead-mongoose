@@ -141,8 +141,9 @@ def create_vat():
 
 def migrate_products():
     query = """
-        select name, category, active, price
-        from public.checkout_products;
+        select name, category, price
+        from public.checkout_products
+        where active = true;
     """
 
     with koala:
@@ -153,8 +154,7 @@ def migrate_products():
         for product in koala_cursor.fetchall():
             name = product[0]
             category_id = product[1]
-            active = product[2]
-            price = product[3]
+            price = product[2]
             vat_id = 1 if category_id == 5 else 2
 
             create_product(name, price, category_id, vat_id)

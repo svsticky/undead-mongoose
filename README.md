@@ -6,22 +6,26 @@ Django application for the mongoose backend & board interface, build in Django.
 
 To run Undead Mongoose, you need:
 
-- Postgresql
+- docker
+- docker-compose
 - pipenv
 - Python 3.8
 
 ## Setting up
 
-Create a database with the name `undead_mongoose`.
-Then, copy `sample.env` to `.env` and put in your credentials.
+Copy `sample.env` to `.env`.
 Setup the database with:
 
 ``` bash
+docker-compose up -d
 pipenv run ./manage.py migrate
 ```
 
 ## Running
 
 ``` bash
+# database
+docker-compose up -d
+# server
 pipenv run ./manage.py runserver
 ```

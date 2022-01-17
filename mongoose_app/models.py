@@ -165,7 +165,7 @@ class TopUpTransaction(Transaction):
 
 # User needs name, age and balance to be able to make sense to BESTUUUUUR.
 class User(models.Model):
-    user_id = models.CharField(max_length=30)
+    user_id = models.IntegerField()
     name = models.CharField(max_length=50)
     birthday = models.DateField()
     balance = models.DecimalField(decimal_places=2, max_digits=6, default=Decimal('0.00'))

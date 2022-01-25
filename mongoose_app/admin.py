@@ -50,6 +50,7 @@ class SaleTransactionsInline(admin.TabularInline):
     model = SaleTransaction
     fields = ['id', 'transaction_sum', 'added']
     readonly_fields = ['id', 'transaction_sum', 'added']
+    show_change_link = True
 
     def has_add_permission(self, request: HttpRequest, obj) -> bool:
         return False

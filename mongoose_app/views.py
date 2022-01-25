@@ -76,6 +76,10 @@ def create_transaction(request):
     """
     body = json.loads(request.body.decode('utf-8'))
     items = body['items']
+
+    if not items:
+        return HttpResponse(status=400)
+
     card_id = body['uuid']
     trans_products = []
     trans_sum = 0

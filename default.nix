@@ -8,6 +8,7 @@ let
     ps.pillow
     ps.requests
     ps.sentry-sdk
+    (ps.callPackage ./nix/django-constance.nix {})
   ]);
 
 in

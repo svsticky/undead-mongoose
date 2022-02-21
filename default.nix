@@ -9,6 +9,7 @@ let
     ps.requests
     ps.sentry-sdk
     (ps.callPackage ./nix/django-constance.nix {})
+    ps.gunicorn
   ]);
 
 in

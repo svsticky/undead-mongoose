@@ -1,6 +1,7 @@
 .env
 images/
 CACHE/
+static/
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/django

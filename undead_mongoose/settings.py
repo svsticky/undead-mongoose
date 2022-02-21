@@ -26,7 +26,7 @@ print(BASE_DIR)
 SECRET_KEY = os.getenv("DJANGO_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DEBUG")
 
 ALLOWED_HOSTS = []
 
@@ -133,7 +133,7 @@ STATIC_URL = '/static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-MEDIA_URL = '/images/'
+MEDIA_URL = './images/'
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'images')
 
@@ -154,3 +154,5 @@ CONSTANCE_CONFIG = {
 }
 
 CONSTANCE_DATABASE_PREFIX = 'constance:settings:'
+
+STATIC_ROOT = './static/'

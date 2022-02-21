@@ -13,10 +13,12 @@ let
   ]);
 
 in
-  {
-    # Make the Python environment available
-    inherit pythonEnv;
-    # Make `niv` available to manage Nix snapshots
-    inherit (pkgs) niv;
-    inherit (pkgs.haskellPackages) dotenv;
+  pkgs.mkShell {
+    packages = [
+      # Make the Python environment available
+      pythonEnv
+      # Make `niv` available to manage Nix snapshots
+      pkgs.niv
+      pkgs.haskellPackages.dotenv
+    ];
   }

@@ -17,4 +17,5 @@ in
     inherit pythonEnv;
     # Make `niv` available to manage Nix snapshots
     inherit (pkgs) niv;
+    inherit (pkgs.haskellPackages) dotenv;
   }

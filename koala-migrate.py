@@ -11,13 +11,7 @@ def get_koala_connection():
     return psycopg2.connect(f"dbname={db_name} user={db_user} password={db_password} host={db_host} port={db_port}")
 
 def get_mongoose_connection():
-    # The databasename is hardcoded, this should be changed in the future (TODO)
-    db_name = "undead_mongoose"
-    db_user = os.getenv("DB_USER")
-    db_password = os.getenv("DB_PASSWORD")
-    db_host = os.getenv("DB_HOST")
-    db_port = os.getenv("DB_PORT")
-    return psycopg2.connect(f"dbname={db_name} user={db_user} password={db_password} host={db_host} port={db_port}")
+    return psycopg2.connect(f"postgresql:///undead_mongoose")
 
 koala = get_koala_connection()
 mongoose = get_mongoose_connection()

@@ -101,7 +101,7 @@ class SaleTransactionAdmin(admin.ModelAdmin):
             messages.error(request, "You need to supply an export date!")
             return HttpResponseRedirect("../")
         date = datetime.strptime(date_string, '%Y-%m-%d').date()
-        transactions = SaleTransaction.objects.filter(date=date).all()
+        transactions = TopUpTransaction.objects.filter(date=date).all()
         serialized_trans = [t.serialize() for t in transactions]
         # mark_safe(f"""
         #     <input text="text" id="submit" value="{json_trans}" style="position: absolute; top: -10000px">

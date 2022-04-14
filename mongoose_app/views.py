@@ -239,7 +239,7 @@ def async_on_webhook(request):
                 print(koala_response)
                 koala_response = koala_response.json()
                 first_name = koala_response['first_name']
-                infix = koala_response['infix']
+                infix = koala_response['infix'] if 'infix' in koala_response else ""
                 last_name = koala_response['last_name']
                 user.name = f'{first_name} {infix} {last_name}'
                 user.birthday = datetime.strptime(koala_response['birth_date'], '%Y-%m-%d')

@@ -19,7 +19,7 @@ admin.site.index_title = "Welcome to Undead Mongoose"
 class ProductTransactionsInline(admin.TabularInline):
     model = ProductTransactions
     extra = 0
-    fields = ['product_id', 'transaction_id', 'show_price', 'show_vat', 'amount']
+    fields = ['product_id', 'transaction_id', 'show_price', 'show_vat', 'amount', "enabled"]
     readonly_fields = ['product_id', 'transaction_id', 'show_price', 'show_vat', 'amount']
 
     def has_delete_permission(self, request: HttpRequest, obj = None) -> bool:

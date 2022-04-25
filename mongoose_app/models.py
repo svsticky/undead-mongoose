@@ -20,7 +20,7 @@ class Category(models.Model):
         return self.name
 
     def serialize(self) -> dict:
-        products = Product.objects.filter(category=self)
+        products = Product.objects.filter(category=self, enabled=True)
         return {
             'name': self.name,
             'products': [p.serialize() for p in products]
@@ -40,6 +40,7 @@ class Product(models.Model):
         on_delete=models.CASCADE,
         verbose_name="BTW"
     )
+    enabled = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name

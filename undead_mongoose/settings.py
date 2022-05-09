@@ -110,7 +110,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 AUTHENTICATION_BACKENDS = [
-    'mozilla_django_oidc.auth.OIDCAuthenticationBackend'
+    'undead_mongoose.oidc.UndeadMongooseOIDC'
 ]
 
 

@@ -5,7 +5,10 @@ class UndeadMongooseOIDC(OIDCAuthenticationBackend):
     def create_user(self, claims):
         user = super(UndeadMongooseOIDC, self).create_user(claims)
         print(claims)
-        print(user)
+        if claims['is_admin']:
+            user.is_superuser = True
+            user.is_staff = True
+        user.username = claims['email']
         # user.first_name = claims.get('given_name', '')
         # user.last_name = claims.get('family_name', '')
         user.save()

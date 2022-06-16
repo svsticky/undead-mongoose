@@ -82,7 +82,7 @@ WSGI_APPLICATION = 'undead_mongoose.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'undead_mongoose',
+        'NAME': 'mongoose',
         'USER': os.getenv("DB_USER"),
         'PASSWORD': os.getenv("DB_PASSWORD"),
         'HOST': os.getenv("DB_HOST"),

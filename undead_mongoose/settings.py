@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'mongoose_app',
+    'admin_board_view',
     'mongoose_app.apps.CustomConstance',
     'constance.backends.database'
 ]

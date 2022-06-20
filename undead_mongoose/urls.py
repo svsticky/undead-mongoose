@@ -42,7 +42,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('oidc/', include('mozilla_django_oidc.urls')),
     path('denied/', DenyView.as_view()),
-    path('', include('mongoose_app.urls')),
+    path('api/', include('mongoose_app.urls')),
+    path('', include('admin_board_view.urls')),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

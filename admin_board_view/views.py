@@ -6,4 +6,5 @@ def index(request):
 
 def products(request):
     products = Product.objects.all()
-    return render(request, "products.html", { "products": products })
+    categories = Category.objects.all()
+    return render(request, "products.html", { "products": products, "categories": categories })

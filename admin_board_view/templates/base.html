@@ -14,13 +14,20 @@
     <link rel="stylesheet" href="{% static 'AdminBoardView/styles.css' %}" type="text/css" title="Default Styles" media="screen">
 
     <!-- JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script 
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+      crossorigin="anonymous">
+    </script>
+    </script>
     <script type="text/javascript" src="{% static 'AdminBoardView/script.js' %}" defer></script>
 
     {% block head %}
     {% endblock head %}
   </head>
   <body>
+    {% csrf_token %}
     <nav class="navbar navbar-dark board-color">
       <div class="container-fluid">
         <a class="navbar-brand" href="#">
@@ -53,7 +60,6 @@
           </a>
           <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser1">
             <form action="{% url 'oidc_logout' %}" method="post">
-              {% csrf_token %}
               <input class="dropdown-item" type="submit" value="Sign out">
             </form>
           </ul>
@@ -62,6 +68,15 @@
       <main class="container d-flex flex-column mt-3" style="width: calc(100% - 300px);">
         {% block body %}
         {% endblock body %}
+        <div class="toast-container position-fixed top-0 end-0 p-3">
+          <div class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+              <strong class="me-auto" id="toast-title"></strong>
+              <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="toast-body"></div>
+          </div>
+        </div>
       </main>
     {% else %}
       <main class="container mt-3">

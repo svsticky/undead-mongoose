@@ -20,14 +20,14 @@
     {% for product in products %}
       <tr id="{{ product.id }}">
         <td><input type="checkbox"/></td>
-        <td class="{% if not product.enabled %}disabled-product{% endif %}">{{ product.image_view }}</td>
+        <td class="product-image {% if not product.enabled %}disabled-product{% endif %}">{{ product.image_view }}</td>
         <td>{{ product.name }}</td>
         <td>{{ product.euro }}</td>
         <td>{{ product.category }}</td>
         <td>
           <button class="btn btn-primary edit-product">Edit</button>
-          <button class="btn btn-warning toggle-product">{% if product.enabled %}De{% else %}Re{% endif %}activate</button>
-          <button class="btn btn-danger delete-product">Delete</button>
+          <button class="btn btn-warning toggle-product" name="{{ product.id }}">{% if product.enabled %}De{% else %}Re{% endif %}activate</button>
+          <button class="btn btn-danger delete-product" name="{{ product.id }}">Delete</button>
         </td>
       </tr>
     {% endfor %}

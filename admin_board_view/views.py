@@ -11,7 +11,7 @@ def products(request):
     return render(request, "products.html", { "products": products, "categories": categories })
 
 # Endpoints for altering models
-def add(request):
+def create(request):
     body = request.POST.dict()
 
     product = Product(
@@ -35,10 +35,10 @@ def edit(request):
     
     return JsonResponse({ "msg": f"Edited the product with id {product.id}" })
 
-def remove(request):
+def delete(request):
     id = request.POST.dict()['id']
     Product.objects.get(id=id).delete()
-    return JsonResponse({ "msg": f"Removed product with {id}" })
+    return JsonResponse({ "msg": f"Deleted product with {id}" })
 
 def toggle(request):
     id = request.POST.dict()['id']

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load static %}
+{% block body %}
+<section class="d-flex">
+  <h1 class="flex-grow-1">Mongoose transactions</h1>
+</section> 
+<table class="table table-striped table-hover text-center align-middle">
+  <thead>
+    <tr>
+      <th>UserID</th>
+      <th>Transaction sum</th>
+      <th>Date</th>
+      <th>Added</th>
+      <th>Cancelled</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for transaction in transactions %}
+      <tr id="{{ transaction.user_id }}">
+        <td>{{ transaction.user_id }}</td>
+        <td>{{ transaction.transaction_sum }}</td>
+        <td>{{ transaction.date }}</td>
+        <td>{{ transaction.added }}</td>
+        <td>{% if transaction.cancelled %}{{ transaction.cancelled }}{% endif %}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

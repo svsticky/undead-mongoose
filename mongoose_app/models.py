@@ -1,6 +1,4 @@
-from email.policy import default
 from typing import Any, Dict, Iterable, Optional, Tuple
-from django.core import validators
 from django.db import models
 from django.utils.html import mark_safe
 from django.conf import settings
@@ -8,6 +6,7 @@ from decimal import Decimal
 from django import forms
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.template.defaultfilters import mark_safe
+
 
 class Category(models.Model):
     name = models.CharField(max_length=30)
@@ -94,6 +93,7 @@ class ProductTransactions(models.Model):
     class Meta:
         verbose_name_plural = "Products"
 
+
 # Every transaction has at least a link with a user, an id and a sum
 # Whether this sum has a negative or positive influence on the total credit depends on the type of transaction
 class Transaction(models.Model):
@@ -145,7 +145,7 @@ class SaleTransaction(Transaction):
 
 # This transaction is created when BESTUUUUUR tops up credit for a member.
 class TopUpTransaction(Transaction):
-
+    
     # Not sure about this. Could be an option.
     added = models.BooleanField(default=False)
 
@@ -158,12 +158,11 @@ class TopUpTransaction(Transaction):
             self.user_id.save()
             self.added = True
         return super().save(force_insert=force_insert, force_update=force_update, using=using, update_fields=update_fields)
-    
+
     def delete(self, using: Any = None, keep_parents: bool = False) -> Tuple[int, Dict[str, int]]:
         self.user_id.balance -= self.transaction_sum
         self.user_id.save()
         return super().delete(using=using, keep_parents=keep_parents)
-    
 
 
 # User needs name, age and balance to be able to make sense to BESTUUUUUR.
@@ -186,6 +185,7 @@ class User(models.Model):
             'balance': self.balance,
         }
 
+
 class Card(models.Model):
     card_id = models.CharField(max_length=8)
     active = models.BooleanField()
@@ -193,6 +193,7 @@ class Card(models.Model):
         'User',
         on_delete=models.CASCADE,
     )
+
 
 class CardConfirmation(models.Model):
     timestamp = models.DateTimeField(auto_now=True)
@@ -202,6 +203,7 @@ class CardConfirmation(models.Model):
     )
     token = models.CharField(max_length=32)
 
+
 class VAT(models.Model):
     percentage = models.IntegerField(
         validators=[
@@ -209,7 +211,7 @@ class VAT(models.Model):
             MaxValueValidator(limit_value=100, message="Percentage can't be higher than 100")
         ]
     )
-    
+
     def __str__(self) -> str:
         return "BTW: " + self.percentage_view()
 

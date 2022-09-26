@@ -40,3 +40,16 @@ def toggle(request):
     product.enabled = not product.enabled
     product.save()
     return JsonResponse({ "msg": f"Set the state of product {id} to enabled={product.enabled}" })
+
+
+def settings(request):
+    vat = VAT.objects.all()
+    categories = Category.objects.all()
+    return render(request, "settings.html", { "vat": vat, "categories": categories })
+
+
+def transactions(request):
+    sales = list(SaleTransaction.objects.all())
+    topups = list(TopUpTransaction.objects.all())
+    transactions = sales + topups
+    return render(request, "transactions.html", { "transactions": transactions })

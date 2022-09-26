@@ -36,55 +36,22 @@
 <div class="modal fade" id="addProductModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
+      <form method="post" enctype="multipart/form-data">
       <div class="modal-header">
         <h5 class="modal-title">Add new product</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <label class="form-label">Product name</label>
-        <div class="input-group mb-3">
-          <input type="text" id="name" placeholder="Leffe Blond" class="form-control" />
-        </div>
-
-        <label class="form-label">Price</label>
-        <div class="input-group mb-3">
-          <span class="input-group-text">€</span>
-          <input type="text" id="price" placeholder="15.15" class="form-control" />
-        </div>
-
-        <label class="form-label">Category</label>
-        <div class="input-group mb-3">
-          <select class="form-select" id="category">
-            {% for category in categories %}
-              <option value="{{ category.name}}">{{ category.name }}</option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <label class="form-label">VAT</label>
-        <div class="input-group mb-3">
-          <input type="text" id="vat" placeholder="21" class="form-control" />
-          <span class="input-group-text">%</span>
-        </div>
-        
-        <label class="form-label">Enabled</label>
-        <div class="input-group mb-3">
-          <div class="input-group-text">
-            <input class="form-check-input mt-0" id="enabled" type="checkbox" value="">
-          </div>
-        </div>
-        
-        <label class="form-label">Product image</label>
-        <div class="input-group mb-3">
-          <input type="file" id="image" class="form-control" />
-        </div>
+        {% csrf_token %}
+        {{ image_upload.as_p }}
       </div>
       <div class="modal-footer">
-        <div class="input-group mb-3">
+        <div class="input-group mb-3 btn-group">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-          <button type="button" class="btn btn-success">Add product</button>
+          <button type="submit" class="btn btn-success">Add product</button>
         </div>
       </div>
+      </form>
     </div>
   </div>
 </div>

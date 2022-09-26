@@ -5,8 +5,9 @@ from django.db import models
 from django.utils.html import mark_safe
 from django.conf import settings
 from decimal import Decimal
+from django import forms
 from django.core.validators import MaxValueValidator, MinValueValidator
-#from django.utils.translation import Trans
+from django.template.defaultfilters import mark_safe
 
 class Category(models.Model):
     name = models.CharField(max_length=30)
@@ -47,7 +48,7 @@ class Product(models.Model):
 
     def euro(self):
         return "€{:0.2f}".format(self.price)
-    
+
     def image_view(self):
         if self.image:
             return mark_safe('<img src="{}" width="100" height="100"/>'.format(self.image.url))
@@ -58,7 +59,8 @@ class Product(models.Model):
 
     # Deletes image on removing the product
     def delete(self, using: Any = None, keep_parents: bool = False) -> Tuple[int, Dict[str, int]]:
-        self.image.storage.delete(self.image.name)
+        if self.image:
+            self.image.storage.delete(self.image.name)
         return super().delete(using=using, keep_parents=keep_parents)
 
     def serialize(self) -> dict:
@@ -217,3 +219,20 @@ class VAT(models.Model):
     class Meta:
         verbose_name = "BTW percentage"
         verbose_name_plural = "BTW percentages"
+
+
+class ProductForm(forms.ModelForm):
+    name = forms.CharField(widget=forms.TextInput(attrs={'placeholder': 'Suikerwafel', 'class': 'form-control'}), 
+                            label=mark_safe('<label class="form-label">Name</label>'))
+    price = forms.DecimalField(widget=forms.TextInput(attrs={'placeholder': '15.15', 'class': 'form-control'}), 
+                            label=mark_safe('<label class="form-label">Price</label>'))
+    image = forms.ImageField(widget=forms.FileInput(attrs={'class': 'form-control'}), 
+                            label=mark_safe('<label class="form-label">Image</label>'))
+    vat = forms.ModelChoiceField(queryset=VAT.objects.all(), widget=forms.Select(attrs={'class': 'form-control'}), 
+                            label=mark_safe('<label class="form-label">VAT</label>'))
+    category = forms.ModelChoiceField(queryset=Category.objects.all(), widget=forms.Select(attrs={'class': 'form-control'}), 
+                            label=mark_safe('<label class="form-label">Category</label>'))
+
+    class Meta:
+        model = Product
+        fields = ["name", "image", "price", "vat", "category", "enabled"]

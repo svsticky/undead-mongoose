@@ -5,3 +5,7 @@
 .disabled-product {
   filter: grayscale(100%);
 }
+
+.hidden-item {
+  display: none;
+}

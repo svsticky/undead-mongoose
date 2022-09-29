@@ -46,19 +46,27 @@ const delete_cat_btns = document.getElementsByClassName("delete-category");
 if (delete_cat_btns) {
   Array.from(delete_cat_btns).forEach(btn => {
     btn.addEventListener("click", e => {
-      $.ajax({
-        url: `/category/edit`,
-        data: {
-          "csrfmiddlewaretoken": csrf_token,
-          "categories": JSON.stringify([{"id": btn.name, "delete": true}])
-        },
-        type: "post"
-      }).then(response => {
-        showToast("Delete category result", response.msg);
-        btn.parentElement.parentElement.remove();
-      });
+      showConfirmation(
+        "Confirm category delete",
+        `Are you sure you want to remove this category?`,
+        btn.name
+      )
     });
   })
+}
+
+function delete_category(id) {
+  $.ajax({
+    url: `/category/edit`,
+    data: {
+      "csrfmiddlewaretoken": csrf_token,
+      "categories": JSON.stringify([{"id": id, "delete": true}])
+    },
+    type: "post"
+  }).then(response => {
+    showToast("Delete category result", response.msg);
+    document.querySelector(`#categories [id='${id}']`).remove();
+  });
 }
 
 // Add VAT
@@ -108,17 +116,25 @@ const delete_vat_btns = document.getElementsByClassName("delete-vat");
 if (delete_vat_btns) {
   Array.from(delete_vat_btns).forEach(btn => {
     btn.addEventListener("click", e => {
-      $.ajax({
-        url: `/vat/edit`,
-        data: {
-          "csrfmiddlewaretoken": csrf_token,
-          "vat": JSON.stringify([{"id": btn.name, "delete": true}])
-        },
-        type: "post"
-      }).then(response => {
-        showToast("Delete VAT result", response.msg);
-        btn.parentElement.parentElement.remove();
-      });
+      showConfirmation(
+        "Confirm VAT delete",
+        `Are you sure you want to remove this VAT?`,
+        btn.name
+      )
     });
   })
+}
+
+function delete_vat(id) {
+  $.ajax({
+    url: `/vat/edit`,
+    data: {
+      "csrfmiddlewaretoken": csrf_token,
+      "vat": JSON.stringify([{"id": id, "delete": true}])
+    },
+    type: "post"
+  }).then(response => {
+    showToast("Delete VAT result", response.msg);
+    document.querySelector(`#vat [id='${id}']`).remove();
+  });
 }

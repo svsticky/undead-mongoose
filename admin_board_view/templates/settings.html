@@ -14,21 +14,26 @@
           <th>Actions</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody id="categories">
+        <tr id="template-category-item" class="hidden-item">
+          <td><input class="form-control" type="text" value={{ category.name }}></td>
+          <td><input type="checkbox" {% if category.alcoholic %}checked{% endif %}></td>
+          <td><button class="btn btn-danger delete-category" name="{{ category.id }}">Delete</button></td>
+        </tr>
         {% for category in categories %}
-          <tr id="{{ category.id }}">
+          <tr class="category-item" id="{{ category.id }}">
             <td><input class="form-control" type="text" value={{ category.name }}></td>
             <td><input type="checkbox" {% if category.alcoholic %}checked{% endif %}></td>
-            <td>
-              <button class="btn btn-danger delete-category" name="{{ category.id }}">Delete</button>
-            </td>
+            <td><button class="btn btn-danger delete-category" name="{{ category.id }}">Delete</button></td>
           </tr>
         {% endfor %}
-        <tr><td colspan="3"><button class="btn btn-primary">Add new category</td></tr>
       </tbody>
     </table>
     <hr/>
-    <button class="btn btn-success">Save changes</button>
+    <div class="btn-group btn-group-justified w-100">
+      <button id="add-category" class="btn btn-primary w-50">Add new category</button>
+      <button id="update-categories" class="btn btn-success w-50">Save changes</button>
+    </div>
   </section>
   <section class="col">
     <div class="d-flex">
@@ -41,23 +46,31 @@
           <th>Actions</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody id="vat">
+        <tr id="template-vat-item" class="hidden-item">
+          <td class="input-group">
+            <input class="form-control" type="text" value={{ vat.percentage }}>
+            <span class="input-group-text">%</span>
+          </td>
+          <td><button class="btn btn-danger delete-vat" name="{{ vat.id }}">Delete</button></td>
+        </tr>
         {% for vat in vat %}
-          <tr id="{{ vat.id }}">
+          <tr id="{{ vat.id }}" class="vat-item">
             <td class="input-group">
               <input class="form-control" type="text" value={{ vat.percentage }}>
               <span class="input-group-text">%</span>
             </td>
-            <td>
-              <button class="btn btn-danger delete-vat" name="{{ vat.id }}">Delete</button>
-            </td>
+            <td><button class="btn btn-danger delete-vat" name="{{ vat.id }}">Delete</button></td>
           </tr>
         {% endfor %}
-        <tr><td colspan="2"><button class="btn btn-primary">Add new VAT</td></tr>
       </tbody>
     </table>
     <hr/>
-    <button class="btn btn-success">Save changes</button>
+    <div class="btn-group btn-group-justified w-100">
+      <button id="add-vat" class="btn btn-primary w-50">Add new VAT</button>
+      <button id="update-vat" class="btn btn-success w-50">Save changes</button>
+    </div>
   </section>
 </article>
+<script type="text/javascript" src="{% static 'AdminBoardView/settings.js' %}" defer></script>
 {% endblock %}

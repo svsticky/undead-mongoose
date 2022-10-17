@@ -1,5 +1,5 @@
 from django.http.response import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import render, HttpResponseRedirect
 from .models import *
 import json
 
@@ -11,13 +11,25 @@ def index(request):
 def products(request):
     if request.POST:
         product = ProductForm(request.POST, request.FILES)
+
+        if request.GET["id"] and request.GET["id"] != "0":
+            instance = Product.objects.get(id=request.GET["id"])
+            product = ProductForm(request.POST, request.FILES, instance=instance)
+
         if product.is_valid():
             product.category = Category.objects.get(name=product.cleaned_data["category"])
-            product.save()
+            p = product.save()
+            return HttpResponseRedirect("/products?id="+str(p.id))
+
+    product = None
+    pf = ProductForm
+    if request.GET and request.GET["id"] and request.GET["id"] != "0":
+        product = Product.objects.get(id=request.GET["id"])
+        pf = ProductForm(initial={"image": "Test"}, instance=product)
 
     products = Product.objects.all()
     categories = Category.objects.all()
-    return render(request, "products.html", { "products": products, "categories": categories, "image_upload": ProductForm })
+    return render(request, "products.html", { "products": products, "categories": categories, "product_form": pf, "current_product": product })
 
 
 def edit(request):

@@ -5,4 +5,30 @@
 <p>
   This is the admin portal for Undead Mongoose / Magnificent Sloth.
 </p>
+<hr/>
+<div class="">
+  <div class="card w-50">
+    <h5 class="card-header">Charge card</h5>
+    <div class="card-body">
+      <div class="card-text m-2">
+        <input type="text" class="form-control mb-3" id="user" placeholder="Merijn Stiekema"/>
+        <div class="input-group mb-2">
+          <td class="input-group">
+            <span class="input-group-text">€</span>
+            <input type="text" class="form-control" id="amount" placeholder="15.15"/>
+          </td>
+          <select class="form-control" id="type">
+            <option value="pin">Pin</option>
+            <option value="cash">Cash</option>
+            <option value="sales">Sales</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="card-footer">
+      <btn class="btn btn-success" id="confirm-charge">Confirm</btn>
+    </div>
+  </div>
+</div>
+<script type="text/javascript" src="{% static 'AdminBoardView/home.js' %}" defer></script>
 {% endblock %}

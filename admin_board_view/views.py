@@ -5,7 +5,10 @@ import json
 
 
 def index(request):
-    return render(request, "home.html", {"users": User.objects.all()})
+    product_amount = Product.objects.count()
+    total_balance = sum(user.balance for user in User.objects.all())
+
+    return render(request, "home.html", {"users": User.objects.all(), "product_amount": product_amount, "total_balance": total_balance })
 
 
 def products(request):

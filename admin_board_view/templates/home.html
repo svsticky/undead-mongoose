@@ -6,35 +6,65 @@
   This is the admin portal for Undead Mongoose / Magnificent Sloth.
 </p>
 <hr/>
-<div class="">
-  <div class="card w-50">
-    <h5 class="card-header">Add balance to user</h5>
-    <div class="card-body">
-      <div class="card-text m-2">
-        <input class="form-control mb-3" list="userOptions" id="user" placeholder="Search user...">
-        <datalist id="userOptions">
-          {% for user in users %}
-            <option id="{{ user.id }}" value="{{ user }}">
-          {% endfor %}
-        </datalist>
-        <div class="input-group mb-2">
-          <td class="input-group">
-            <span class="input-group-text">€</span>
-            <input type="text" class="form-control" id="amount" placeholder="15.15"/>
-          </td>
-          <select class="form-control" id="type">
-            <option value="pin">Pin</option>
-            <option value="cash">Cash</option>
-            <option value="credit">Credit card</option>
-            <option value="sales">Sales</option>
-          </select>
+<div class="row row-cols-2">
+  <div class="col">
+    <div class="card">
+      <h5 class="card-header">Add balance to user</h5>
+      <div class="card-body">
+        <div class="card-text m-2">
+          <input class="form-control mb-3" list="userOptions" id="user" placeholder="Search user...">
+          <datalist id="userOptions">
+            {% for user in users %}
+              <option id="{{ user.id }}" value="{{ user }}">
+            {% endfor %}
+          </datalist>
+          <div class="input-group mb-2">
+            <td class="input-group">
+              <span class="input-group-text">€</span>
+              <input type="text" class="form-control" id="amount" placeholder="15.15"/>
+            </td>
+            <select class="form-control" id="type">
+              <option value="pin">Pin</option>
+              <option value="cash">Cash</option>
+              <option value="credit">Credit card</option>
+              <option value="sales">Sales</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer btn-group d-flex ">
+        <btn class="btn btn-primary" id="show-user">Show user</btn>
+        <btn class="btn btn-success" id="confirm-charge">Confirm</btn>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="card mb-3">
+      <div class="row g-0 text-center">
+        <div class="col-md-6 bg-warning text-white">
+        </div>
+        <div class="col-md-6">
+          <div class="card-body">
+            <h5 class="card-title">€{{ total_balance }}</h5>
+            <p class="card-text"><small class="text-muted">Mongoose balance</small></p>
+          </div>
         </div>
       </div>
     </div>
-    <div class="card-footer btn-group d-flex ">
-      <btn class="btn btn-primary" id="show-user">Show user</btn>
-      <btn class="btn btn-success" id="confirm-charge">Confirm</btn>
-    </div>
+    <a href="/products">
+      <div class="card mb-3">
+        <div class="row g-0 text-center">
+          <div class="col-md-6 bg-success text-white">
+          </div>
+          <div class="col-md-6">
+            <div class="card-body">
+              <h5 class="card-title">{{ product_amount }}</h5>
+              <p class="card-text"><small class="text-muted">Products</small></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </a>
   </div>
 </div>
 <script type="text/javascript" src="{% static 'AdminBoardView/home.js' %}" defer></script>

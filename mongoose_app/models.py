@@ -30,7 +30,7 @@ class Category(models.Model):
 class Product(models.Model):
     name = models.CharField(max_length=60)
     price = models.DecimalField(decimal_places=2, max_digits=6)
-    image = models.ImageField(null=True)
+    image = models.ImageField(null=True, blank=True)
     category = models.ForeignKey(
         'Category',
         on_delete=models.CASCADE,
@@ -224,15 +224,15 @@ class VAT(models.Model):
 
 
 class ProductForm(forms.ModelForm):
-    name = forms.CharField(widget=forms.TextInput(attrs={'placeholder': 'Suikerwafel', 'class': 'form-control'}), 
+    name = forms.CharField(widget=forms.TextInput(attrs={'placeholder': 'Suikerwafel', 'class': 'form-control'}),
                             label=mark_safe('<label class="form-label">Name</label>'))
-    price = forms.DecimalField(widget=forms.TextInput(attrs={'placeholder': '15.15', 'class': 'form-control'}), 
+    price = forms.DecimalField(widget=forms.TextInput(attrs={'placeholder': '15.15', 'class': 'form-control'}),
                             label=mark_safe('<label class="form-label">Price</label>'))
-    image = forms.ImageField(widget=forms.FileInput(attrs={'class': 'form-control'}), 
+    image = forms.ImageField(widget=forms.FileInput(attrs={'class': 'form-control'}), required=False,
                             label=mark_safe('<label class="form-label">Image</label>'))
-    vat = forms.ModelChoiceField(queryset=VAT.objects.all(), widget=forms.Select(attrs={'class': 'form-control'}), 
+    vat = forms.ModelChoiceField(queryset=VAT.objects.all(), widget=forms.Select(attrs={'class': 'form-control'}),
                             label=mark_safe('<label class="form-label">VAT</label>'))
-    category = forms.ModelChoiceField(queryset=Category.objects.all(), widget=forms.Select(attrs={'class': 'form-control'}), 
+    category = forms.ModelChoiceField(queryset=Category.objects.all(), widget=forms.Select(attrs={'class': 'form-control'}),
                             label=mark_safe('<label class="form-label">Category</label>'))
 
     class Meta:

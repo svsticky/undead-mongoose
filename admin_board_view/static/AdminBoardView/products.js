@@ -1,0 +1,60 @@
+const productModal = new bootstrap.Modal(document.getElementById('productModal'))
+
+// Toggle product
+const toggle_btns = document.getElementsByClassName("toggle-product");
+if (toggle_btns) {
+  Array.from(toggle_btns).forEach(btn => {
+    btn.addEventListener("click", e => {
+      $.ajax({
+        url: `/product/toggle`,
+        data: {
+          "csrfmiddlewaretoken": csrf_token,
+          "id": btn.name
+        },
+        type: "post"
+      }).then(response => {
+        showToast("Toggle product result", response.msg);
+        document.getElementById(btn.name).querySelector(".product-image").classList.toggle("disabled-product");
+        btn.innerHTML = btn.innerHTML == "Deactivate" ? "Reactivate" : "Deactivate";
+      });
+    });    
+  });
+}
+
+// Delete product
+const delete_btns = document.getElementsByClassName("delete-product");
+if (delete_btns) {
+  Array.from(delete_btns).forEach(btn => {
+    btn.addEventListener("click", e => {
+      showConfirmation(
+        "Confirm product delete",
+        `Are you sure you want to remove this product?`,
+        btn.name
+      )
+    });    
+  });
+}
+
+function delete_product(id) {
+  $.ajax({
+    url: `/product/delete`,
+    data: {
+      "csrfmiddlewaretoken": csrf_token,
+      "id": id
+    },
+    type: "post"
+  }).then(response => {
+    showToast("Delete product result", response.msg);
+    document.querySelector(`[id='${id}']`).remove();
+  });
+}
+
+const params = new URLSearchParams(window.location.search);
+const id = params.get("id")
+if (id) {
+  productModal.show()
+}
+
+document.getElementById('productModal').addEventListener('hidden.bs.modal', function (event) {
+  window.location.search = "";
+})

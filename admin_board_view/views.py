@@ -5,7 +5,7 @@ import json
 
 
 def index(request):
-    return render(request, "home.html")
+    return render(request, "home.html", {"users": User.objects.all()})
 
 
 def products(request):

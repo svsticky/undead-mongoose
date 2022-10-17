@@ -4,9 +4,10 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
+from decimal import Decimal
 from django.conf import settings
 from .middleware import authenticated
-from .models import CardConfirmation, Category, Card, Product, ProductTransactions, SaleTransaction, User
+from .models import CardConfirmation, Category, Card, Product, ProductTransactions, SaleTransaction, TopUpTransaction, User
 from datetime import datetime, date
 from django.views.decorators.csrf import csrf_exempt
 import requests
@@ -132,6 +133,34 @@ def create_transaction(request):
             'balance': user.balance
         },
         status=201, safe=False)
+
+
+@require_http_methods(["POST"])
+def update_balance(request):
+    """
+    Called when user finishes transaction.
+    Should:
+    - Add or deduct amount from balance
+    - Create a Transaction object
+    """
+    try:
+        body = request.POST.dict()
+        user = User.objects.get(name=body["user"])
+
+        transaction = TopUpTransaction.objects.create(
+            user_id=user,
+            transaction_sum=Decimal(body["balance"])
+        )
+        transaction.save()
+
+        return JsonResponse({
+            'msg': f"Balance for {user.name} has been updated to {user.balance}",
+            'balance': user.balance
+        }, status=201, safe=False)
+    except Exception as e:
+        return JsonResponse({
+            'msg': f"Balance for {body['user']} could not be updated."
+        }, status=400, safe=False)
 
 
 @csrf_exempt

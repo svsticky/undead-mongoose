@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% load static %}
+{% block body %}
+{% if user_info %}
+<h1>{{ user_info.name }}</h1>
+<h5 class="mb-2">
+  Current balance: <b>{{ user_info.euro_balance }}</b>
+</h5>
+<hr/>
+<div class="row row-cols-2">
+  <div class="col">
+    <div class="card">
+      <h5 class="card-header">Add balance to user</h5>
+      <div class="card-body">
+        <div class="card-text m-2">
+          <div class="input-group mb-2">
+            <td class="input-group">
+              <span class="input-group-text">€</span>
+              <input type="text" class="form-control" id="amount" placeholder="15.15"/>
+            </td>
+            <select class="form-control" id="type">
+              <option value="pin">Pin</option>
+              <option value="cash">Cash</option>
+              <option value="credit">Credit card</option>
+              <option value="sales">Sales</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer btn-group d-flex">
+        <btn class="btn btn-success" id="confirm-charge">Confirm</btn>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="card">
+      <h5 class="card-header">Cards</h5>
+      <div class="card-body">
+        <table class="table table-striped table-hover text-center align-middle">
+          <thead>
+            <tr>
+              <th>UUID</th>
+              <th>Active</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for card in cards %}
+            <tr>
+              <td>{{ card.info.id }}</td>
+              <td>{{ card.info.active }}</td>
+              <td>
+                {% if not card.info.active %}
+                  <button class="btn btn-warning activate-card" id="{{ card.token }}">Activate</button>
+                {% endif %}
+                <button class="btn btn-danger">Delete</button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<hr/>
+<div class="row row-cols-2">
+  <div class="col">
+    <div class="card">
+      <h5 class="card-header">Top ups</h5>
+      <div class="card-body">
+        <table class="table table-striped table-hover text-center align-middle">
+          <thead>
+            <tr>
+              <th>Sum</th>
+              <th>Date</th>
+              <th>Added</th>
+              <th>Cancelled</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for top_up in top_ups %}
+            <tr>
+              <td>{{ top_up.transaction_sum }}</td>
+              <td>{{ top_up.date }}</td>
+              <td>{{ top_up.added }}</td>
+              <td>{% if top_up.cancelled %}{{ top_up.cancelled }}{% endif %}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="card">
+      <h5 class="card-header">Product sales</h5>
+      <div class="card-body">
+        <table class="table table-striped table-hover text-center align-middle">
+          <thead>
+            <tr>
+              <th>Sum</th>
+              <th>Date</th>
+              <th>Added</th>
+              <th>Cancelled</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for sale in sales %}
+            <tr>
+              <td>{{ sale.transaction_sum }}</td>
+              <td>{{ sale.date }}</td>
+              <td>{{ sale.added }}</td>
+              <td>{% if sale.cancelled %}{{ sale.cancelled }}{% endif %}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="card w-100">
+  <h5 class="card-header">Find user</h5>
+  <div class="card-body">
+    <div class="card-text m-2">
+      <input class="form-control mb-3" list="userOptions" id="user" placeholder="Search user...">
+      <datalist id="userOptions">
+        {% for user in users %}
+          <option id="{{ user.id }}" value="{{ user }}">
+        {% endfor %}
+      </datalist>
+    </div>
+  </div>
+  <div class="card-footer btn-group d-flex ">
+    <btn class="btn btn-primary" id="show-user">Show user</btn>
+  </div>
+</div>
+{% endif %}
+<script type="text/javascript" src="{% static 'AdminBoardView/user.js' %}" defer></script>
+{% endblock %}

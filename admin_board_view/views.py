@@ -55,6 +55,25 @@ def toggle(request):
     return JsonResponse({ "msg": f"Set the state of product {id} to enabled={product.enabled}" })
 
 
+def users(request, user_id=None):
+    user, cards = None, None
+    if user_id:
+        user = User.objects.get(id=user_id)
+        top_ups = TopUpTransaction.objects.all().filter(user_id=user)
+        sales= SaleTransaction.objects.all().filter(user_id=user)
+
+        cards = []
+        for i, card in enumerate(Card.objects.all().filter(user_id=user.id)):
+            cards.append({"info": card})
+            if card.active == False:
+                cards[i]["token"] = CardConfirmation.objects.get(card=card).token
+
+        return render(request, "user.html", { "user_info": user, "cards": cards, "top_ups": top_ups, "sales": sales })
+    else:
+        users = User.objects.all()
+        return render(request, "user.html", { "users": users })
+
+
 def settings(request):
     vat = VAT.objects.all()
     categories = Category.objects.all()

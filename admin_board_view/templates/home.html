@@ -14,7 +14,7 @@
         <input class="form-control mb-3" list="userOptions" id="user" placeholder="Search user...">
         <datalist id="userOptions">
           {% for user in users %}
-            <option value="{{ user }}">
+            <option id="{{ user.id }}" value="{{ user }}">
           {% endfor %}
         </datalist>
         <div class="input-group mb-2">
@@ -25,12 +25,14 @@
           <select class="form-control" id="type">
             <option value="pin">Pin</option>
             <option value="cash">Cash</option>
+            <option value="credit">Credit card</option>
             <option value="sales">Sales</option>
           </select>
         </div>
       </div>
     </div>
-    <div class="card-footer">
+    <div class="card-footer btn-group d-flex ">
+      <btn class="btn btn-primary" id="show-user">Show user</btn>
       <btn class="btn btn-success" id="confirm-charge">Confirm</btn>
     </div>
   </div>

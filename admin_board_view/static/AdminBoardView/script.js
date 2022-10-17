@@ -32,3 +32,14 @@ function showConfirmation(title, body, id) {
   document.getElementById("confirm-body").innerHTML = body
   modal.show();
 }
+
+// Show user page
+const showUser = document.getElementById("show-user");
+if (showUser) { 
+  document.getElementById("show-user").addEventListener("click", e => {
+    const name = document.getElementById("user").value;
+    console.log(name, document.getElementById("userOptions").querySelector(`[value='${name}']`))
+    const userId = document.getElementById("userOptions").querySelector(`[value='${name}']`).id;
+    window.location = `/users/${userId}`
+  });
+}

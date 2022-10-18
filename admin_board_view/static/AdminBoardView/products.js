@@ -1,4 +1,5 @@
-const productModal = new bootstrap.Modal(document.getElementById('productModal'))
+const productModal = new bootstrap.Modal(document.getElementById('product-modal'));
+const salesModal = new bootstrap.Modal(document.getElementById('sales-modal'));
 
 // Toggle product
 const toggle_btns = document.getElementsByClassName("toggle-product");
@@ -50,11 +51,16 @@ function delete_product(id) {
 }
 
 const params = new URLSearchParams(window.location.search);
-const id = params.get("id")
-if (id) {
+if (params.get("edit")) {
   productModal.show()
+} else if (params.get("sales")) {
+  salesModal.show()
 }
 
-document.getElementById('productModal').addEventListener('hidden.bs.modal', function (event) {
+document.getElementById('product-modal').addEventListener('hidden.bs.modal', function (event) {
   window.location.search = "";
-})
+});
+
+document.getElementById('sales-modal').addEventListener('hidden.bs.modal', function (event) {
+  window.location.search = "";
+});

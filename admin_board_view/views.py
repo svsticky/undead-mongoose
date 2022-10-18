@@ -1,3 +1,4 @@
+from django.db.models import Sum
 from django.http.response import JsonResponse
 from django.shortcuts import render, HttpResponseRedirect
 from .models import *
@@ -15,24 +16,32 @@ def products(request):
     if request.POST:
         product = ProductForm(request.POST, request.FILES)
 
-        if request.GET["id"] and request.GET["id"] != "0":
-            instance = Product.objects.get(id=request.GET["id"])
+        if "edit" in request.GET and request.GET["edit"] != "0":
+            instance = Product.objects.get(id=request.GET["edit"])
             product = ProductForm(request.POST, request.FILES, instance=instance)
 
         if product.is_valid():
             product.category = Category.objects.get(name=product.cleaned_data["category"])
             p = product.save()
-            return HttpResponseRedirect("/products?id="+str(p.id))
+            return HttpResponseRedirect("/products?edit="+str(p.id))
 
-    product = None
+    product, product_sales = None, None
     pf = ProductForm
-    if request.GET and request.GET["id"] and request.GET["id"] != "0":
-        product = Product.objects.get(id=request.GET["id"])
-        pf = ProductForm(initial={"image": "Test"}, instance=product)
+    if request.GET:
+        if "edit" in request.GET and request.GET["edit"] != "0":
+            product = Product.objects.get(id=request.GET["edit"])
+            pf = ProductForm(instance=product)
+        if "sales" in request.GET and request.GET["sales"] != "0":
+            product = Product.objects.get(id=request.GET["sales"])
+            transactions = ProductTransactions.objects.filter(product_id=product)
+            product_sales = {
+                "all": transactions,
+                "sum": transactions.values('product_price').annotate(sum=Sum('amount'))
+            }
 
     products = Product.objects.all()
     categories = Category.objects.all()
-    return render(request, "products.html", { "products": products, "categories": categories, "product_form": pf, "current_product": product })
+    return render(request, "products.html", { "products": products, "categories": categories, "product_form": pf, "current_product": product, "product_sales": product_sales })
 
 
 def edit(request):

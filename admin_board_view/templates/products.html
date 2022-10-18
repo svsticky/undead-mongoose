@@ -23,15 +23,20 @@
         <td>{{ product.euro }}</td>
         <td>{{ product.category }}</td>
         <td>
-          <a href="/products?id={{ product.id }}"><button class="btn btn-primary edit-product">Edit</button></a>
-          <button class="btn btn-warning toggle-product" name="{{ product.id }}">{% if product.enabled %}De{% else %}Re{% endif %}activate</button>
-          <button class="btn btn-danger delete-product" name="{{ product.id }}">Delete</button>
+          <div class="mb-1">
+            <a href="/products?edit={{ product.id }}"><button class="btn btn-primary edit-product">Edit</button></a>
+            <a href="/products?sales={{ product.id }}"><button class="btn btn-success product-sales">Sales</button></a>
+          </div>
+          <div>
+            <button class="btn btn-warning toggle-product" name="{{ product.id }}">{% if product.enabled %}De{% else %}Re{% endif %}activate</button>
+            <button class="btn btn-danger delete-product" name="{{ product.id }}">Delete</button>
+          </div>
         </td>
       </tr>
     {% endfor %}
   </tbody>
 </table>
-<div class="modal fade" id="productModal" tabindex="-1">
+<div class="modal fade" id="product-modal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
       <form method="post" enctype="multipart/form-data">
@@ -52,6 +57,58 @@
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
           <button type="submit" class="btn btn-success">Save product</button>
         </div>
+      </div>
+      </form>
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="sales-modal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" enctype="multipart/form-data">
+      <div class="modal-header">
+        <h5 class="modal-title">Product sales</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <h5>Sales per price</h5>
+        <table class="table table-striped table-hover text-center align-middle">
+          <thead>
+            <tr>
+              <th>Amount</th>
+              <th>Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for sale in product_sales.sum %}
+              <tr>
+                <td>{{ sale.sum }}x</td>
+                <td>€{{ sale.product_price }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <hr/>
+        <h5>All time sales</h5>
+        <table class="table table-striped table-hover text-center align-middle">
+          <thead>
+            <tr>
+              <th>Amount</th>
+              <th>Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for sale in product_sales.all %}
+              <tr>
+                <td>{{ sale.amount }}x</td>
+                <td>€{{ sale.product_price }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
       </div>
       </form>
     </div>

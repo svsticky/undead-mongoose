@@ -10,6 +10,7 @@ To run Undead Mongoose, you need:
 - docker-compose
 - nix
 - Python 3.8
+- dotenv (`python3-dotenv-cli` on Ubuntu)
 
 ## Setting up
 First, run
@@ -20,12 +21,12 @@ Setup the database with:
 
 ``` bash
 docker-compose up -d
-nix-shell --run "./manage.py migrate"
+dotenv nix-shell --run "./manage.py migrate"
 ```
 
 In development, create an admin superuser
 ``` bash
-nix-shell --run "./manage.py createsuperuser"
+dotenv nix-shell --run "./manage.py createsuperuser"
 ```
 
 ## Running

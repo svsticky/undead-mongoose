@@ -8,10 +8,19 @@ def get_koala_connection():
     db_password = os.getenv("KOALA_DB_PASSWORD")
     db_host = os.getenv("KOALA_DB_HOST")
     db_port = os.getenv("KOALA_DB_PORT")
-    return psycopg2.connect(f"dbname={db_name} user={db_user} password={db_password} host={db_host} port={db_port}")
+
+    conn =  psycopg2.connect(f"dbname={db_name} user={db_user} password={db_password} host={db_host} port={db_port}")
+    return conn
 
 def get_mongoose_connection():
-    return psycopg2.connect(f"postgresql:///undead_mongoose")
+    db_name = os.getenv("DB_NAME")
+    db_user = os.getenv("DB_USER")
+    db_password = os.getenv("DB_PASSWORD")
+    db_host = os.getenv("DB_HOST")
+    db_port = os.getenv("DB_PORT")
+
+    conn = psycopg2.connect(f"dbname={db_name} user={db_user} password={db_password} host={db_host} port={db_port}")
+    return conn
 
 koala = get_koala_connection()
 mongoose = get_mongoose_connection()
@@ -156,14 +165,13 @@ def migrate_products():
 
 def create_product(name, price, category_id, vat_id):
     query = f"""
-        insert into public.mongoose_app_product(name, price, category_id, vat_id)
-        values (%s, %s, %s, %s);
+        insert into public.mongoose_app_product(name, price, category_id, vat_id, enabled)
+        values (%s, %s, %s, %s, %s);
     """
 
     with mongoose:
         mongoose_cursor = mongoose.cursor()
-
-        mongoose_cursor.execute(query, (name, price, category_id, vat_id))
+        mongoose_cursor.execute(query, (name, price, category_id, vat_id, True))
 
 
 def clean_database():

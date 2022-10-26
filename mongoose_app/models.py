@@ -8,6 +8,12 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.template.defaultfilters import mark_safe
 
 
+top_up_types = [
+    (1, "Pin"),
+    (2, "Credit card")
+]
+
+
 class Category(models.Model):
     name = models.CharField(max_length=30)
     alcoholic = models.BooleanField(default=False)
@@ -145,9 +151,8 @@ class SaleTransaction(Transaction):
 
 # This transaction is created when BESTUUUUUR tops up credit for a member.
 class TopUpTransaction(Transaction):
-    
-    # Not sure about this. Could be an option.
     added = models.BooleanField(default=False)
+    type = models.IntegerField(choices=top_up_types, default=1)
 
     def __str__(self):
         return 'Top up: ' + str(self.id) + ": " + str(self.user_id.name)

@@ -12,10 +12,13 @@ from django.views.decorators.csrf import csrf_exempt
 import requests
 import threading
 from constance import config
+
 import secrets
+
 
 def index(request):
     return render(request, "index.html")
+
 
 # GET endpoints
 @authenticated
@@ -56,8 +59,7 @@ def get_products(request):
         categories = Category.objects.all()
     else:
         categories = Category.objects.filter(alcoholic=False)
-        
-    
+
     serialized_categories = [c.serialize() for c in categories]
     return JsonResponse(serialized_categories, safe=False)
 
@@ -74,27 +76,47 @@ def create_transaction(request):
     - Create a Transaction object.
     Would the current model setup not create a problem when a product is deleted?
     """
-    body = json.loads(request.body.decode('utf-8'))
-    items = body['items']
 
-    if not items:
+    try:
+        body = json.loads(request.body.decode('utf-8'))
+    except json.decoder.JSONDecodeError:
         return HttpResponse(status=400)
 
+    if 'items' not in body or 'uuid' not in body:
+        return HttpResponse(status=400)
+
+    items = body['items']
     card_id = body['uuid']
+
     trans_products = []
     trans_sum = 0
     for product in items:
+        if 'id' not in product or 'amount' not in product:
+            return HttpResponse(status=400)
+
         p_id = int(product['id'])
         p_amount = int(product['amount'])
+
         db_product = Product.objects.filter(id=p_id).first()
+        if not db_product:
+            return HttpResponse(
+                status=400,
+                content=f"Product {p_id} not found"
+            )
+
         trans_sum += db_product.price * p_amount
         trans_products.append((db_product, p_amount))
 
     card = Card.objects.filter(card_id=card_id).first()
+    if not card:
+        return HttpResponse(
+            status=400,
+            content="Card not found")
+
     user = card.user_id
-    
+
     transaction = SaleTransaction.objects.create(
-        user_id=user, 
+        user_id=user,
         transaction_sum=trans_sum)
 
     for product, amount in trans_products:
@@ -132,7 +154,7 @@ def register_card(request):
     # Check if card is already present in the database
     # Cards are FULLY UNIQUE OVER ALL MEMBERS
     card = Card.objects.filter(card_id=card_id).first()
-    
+
     if not card == None:
         return HttpResponse(status=409)
 
@@ -140,15 +162,15 @@ def register_card(request):
     koala_response = requests.get(
         settings.USER_URL + '/api/internal/member_by_studentid',
         params={
-            'student_number' : student_nr
+            'student_number': student_nr
         },
         headers={
-            'Authorization' : settings.USER_TOKEN
+            'Authorization': settings.USER_TOKEN
         }
     )
     # If user is not found in database, we cannot create user here.
     if koala_response.status_code == 204:
-        return HttpResponse(status=404) # Sloth expects a 404.
+        return HttpResponse(status=404)  # Sloth expects a 404.
 
     # Get user info.
     koala_response = koala_response.json()
@@ -171,9 +193,9 @@ def register_card(request):
             infix = koala_response['infix']
         last_name = koala_response['last_name']
         born = datetime.strptime(koala_response['birth_date'], '%Y-%m-%d')
-        
+
         user = User.objects.create(
-            user_id=user_id, 
+            user_id=user_id,
             name=f'{first_name} {infix} {last_name}' if infix else f'{first_name} {last_name}',
             birthday=born
         )
@@ -210,7 +232,6 @@ def on_webhook(request):
     thr = threading.Thread(target=async_on_webhook, args=[request])
     thr.start()
     return HttpResponse(status=200)
-    
 
 
 def async_on_webhook(request):
@@ -225,10 +246,10 @@ def async_on_webhook(request):
             koala_response = requests.get(
                 settings.USER_URL + '/api/internal/member_by_id',
                 params={
-                    'id' : user.user_id
+                    'id': user.user_id
                 },
-                headers= {
-                    'Authorization' : settings.USER_TOKEN
+                headers={
+                    'Authorization': settings.USER_TOKEN
                 }
             )
             # TODO: What if this happens?

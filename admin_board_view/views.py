@@ -72,7 +72,7 @@ def users(request, user_id=None):
     if user_id:
         user = User.objects.get(id=user_id)
         top_ups = TopUpTransaction.objects.all().filter(user_id=user)
-        sales= SaleTransaction.objects.all().filter(user_id=user)
+        sales = SaleTransaction.objects.all().filter(user_id=user)
 
         cards = []
         for i, card in enumerate(Card.objects.all().filter(user_id=user.id)):
@@ -80,7 +80,19 @@ def users(request, user_id=None):
             if card.active == False:
                 cards[i]["token"] = CardConfirmation.objects.get(card=card).token
 
-        return render(request, "user.html", { "user_info": user, "cards": cards, "top_ups": top_ups, "sales": sales, "top_types": top_up_types })
+            top_ups_paginator = Paginator(top_ups, 5)
+            try:
+                top_up_page = top_ups_paginator.get_page(request.GET.get('top_ups'))
+            except Exception:
+                top_up_page = top_ups_paginator.page(1)
+
+            sales_paginator = Paginator(sales, 5)
+            try:
+                sales_page = sales_paginator.get_page(request.GET.get('top_ups'))
+            except Exception:
+                sales_page = sales_paginator.page(1)
+
+        return render(request, "user.html", { "user_info": user, "cards": cards, "top_ups": top_up_page, "sales": sales_page, "top_types": top_up_types })
     else:
         users = User.objects.all()
         return render(request, "user.html", { "users": users })

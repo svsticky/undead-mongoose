@@ -78,7 +78,7 @@
             </tr>
           </thead>
           <tbody>
-            {% for top_up in top_ups %}
+            {% for top_up in top_ups.object_list %}
             <tr>
               <td>{{ top_up.transaction_sum }}</td>
               <td>{{ top_up.date }}</td>
@@ -88,6 +88,7 @@
           {% endfor %}
           </tbody>
         </table>
+        {% include "pagination_footer.html" with page=top_ups page_name='top_ups' %}
       </div>
     </div>
   </div>
@@ -105,7 +106,7 @@
             </tr>
           </thead>
           <tbody>
-            {% for sale in sales %}
+            {% for sale in sales.object_list %}
             <tr>
               <td>{{ sale.transaction_sum }}</td>
               <td>{{ sale.date }}</td>
@@ -115,6 +116,7 @@
           {% endfor %}
           </tbody>
         </table>
+        {% include "pagination_footer.html" with page=sales page_name='sales' %}
       </div>
     </div>
   </div>

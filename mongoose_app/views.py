@@ -6,7 +6,7 @@ from django.views.decorators.http import require_http_methods
 
 from django.conf import settings
 from .middleware import authenticated
-from .models import CardConfirmation, Category, Card, Product, ProductTransactions, SaleTransaction, User
+from .models import CardConfirmation, Category, Card, Product, ProductTransactions, SaleTransaction, User, NamedTransactionProductTotal
 from datetime import datetime, date
 from django.views.decorators.csrf import csrf_exempt
 import requests
@@ -60,6 +60,54 @@ def get_products(request):
     
     serialized_categories = [c.serialize() for c in categories]
     return JsonResponse(serialized_categories, safe=False)
+
+@authenticated
+@require_http_methods(['GET'])
+def get_product_transactions(request):
+    """
+    Retrieve all historical sale transactions
+    """
+    query_for_date_str = request.GET.get('date')
+    if query_for_date_str:
+        query_for_dt = datetime.fromtimestamp(int(query_for_date_str))
+    else:
+        query_for_dt = datetime.now()
+    query_for_date = datetime(query_for_dt.year, query_for_dt.month, query_for_dt.day)
+
+    transactions = ProductTransactions.objects.all()
+
+    product_counts = {}
+    product_names = {}
+
+    for transaction_product in transactions:
+        transaction = transaction_product.transaction_id
+
+        transaction_dt = datetime(transaction.date.year, transaction.date.month, transaction.date.day)
+
+        if transaction_dt != query_for_date:
+            continue
+
+        product = transaction_product.product_id
+
+        if product.id in product_counts:
+            product_counts[product.id] = product_counts[product.id] + 1
+        else:
+            product_counts[product.id] = 1
+
+        if product.id not in product_names:
+            product_names[product.id] = product.name
+
+    result = []
+
+    for product_id in product_counts:
+        result.append(NamedTransactionProductTotal(
+            product_id=product_id,
+            amount=product_counts[product_id],
+            name=product_names[product_id]
+        ))
+
+    serialized_result = [c.serialize() for c in result]
+    return JsonResponse(serialized_result, safe=False)
 
 
 # POST endpoints

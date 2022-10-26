@@ -149,7 +149,8 @@ def update_balance(request):
 
         transaction = TopUpTransaction.objects.create(
             user_id=user,
-            transaction_sum=Decimal(body["balance"])
+            transaction_sum=Decimal(body["balance"]),
+            type=body["type"]
         )
         transaction.save()
 

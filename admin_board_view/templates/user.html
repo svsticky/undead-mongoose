@@ -2,7 +2,7 @@
 {% load static %}
 {% block body %}
 {% if user_info %}
-<h1>{{ user_info.name }}</h1>
+<h1 id="user">{{ user_info.name }}</h1>
 <h5 class="mb-2">
   Current balance: <b>{{ user_info.euro_balance }}</b>
 </h5>
@@ -19,10 +19,9 @@
               <input type="text" class="form-control" id="amount" placeholder="15.15"/>
             </td>
             <select class="form-control" id="type">
-              <option value="pin">Pin</option>
-              <option value="cash">Cash</option>
-              <option value="credit">Credit card</option>
-              <option value="sales">Sales</option>
+              {% for option in top_types %}
+                <option value="{{ option.0 }}">{{ option.1 }}</option>
+              {% endfor %}
             </select>
           </div>
         </div>

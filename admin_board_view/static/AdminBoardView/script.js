@@ -38,8 +38,33 @@ const showUser = document.getElementById("show-user");
 if (showUser) { 
   document.getElementById("show-user").addEventListener("click", e => {
     const name = document.getElementById("user").value;
-    console.log(name, document.getElementById("userOptions").querySelector(`[value='${name}']`))
     const userId = document.getElementById("userOptions").querySelector(`[value='${name}']`).id;
-    window.location = `/users/${userId}`
+    window.location = `/users/${userId}`;
+  });
+}
+
+const confirm_charge = document.getElementById("confirm-charge");
+if (confirm_charge) {
+  confirm_charge.addEventListener("click", e => {
+    const amount = document.getElementById("amount").value;
+    const user = document.getElementById("user").value || document.getElementById("user").innerHTML;
+    const type = document.getElementById("type").value;
+
+    $.ajax({
+      url: `/api/balance`,
+      data: {
+        "csrfmiddlewaretoken": csrf_token,
+        "user": user,
+        "type": type,
+        "balance": amount
+      },
+      type: "POST",
+      success: (response) => {
+        showToast("Updated balance", response.msg);
+      }, 
+      error: (response) => {
+        showToast("Updated balance - Failed", response.responseJSON.msg);
+      }
+    });
   });
 }

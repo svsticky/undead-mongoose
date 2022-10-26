@@ -24,10 +24,9 @@
               <input type="text" class="form-control" id="amount" placeholder="15.15"/>
             </td>
             <select class="form-control" id="type">
-              <option value="pin">Pin</option>
-              <option value="cash">Cash</option>
-              <option value="credit">Credit card</option>
-              <option value="sales">Sales</option>
+              {% for option in top_types %}
+                <option value="{{ option.0 }}">{{ option.1 }}</option>
+              {% endfor %}
             </select>
           </div>
         </div>

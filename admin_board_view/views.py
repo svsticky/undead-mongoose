@@ -8,8 +8,7 @@ import json
 def index(request):
     product_amount = Product.objects.count()
     total_balance = sum(user.balance for user in User.objects.all())
-
-    return render(request, "home.html", {"users": User.objects.all(), "product_amount": product_amount, "total_balance": total_balance })
+    return render(request, "home.html", {"users": User.objects.all(), "product_amount": product_amount, "total_balance": total_balance, "top_types": top_up_types })
 
 
 def products(request):
@@ -80,7 +79,7 @@ def users(request, user_id=None):
             if card.active == False:
                 cards[i]["token"] = CardConfirmation.objects.get(card=card).token
 
-        return render(request, "user.html", { "user_info": user, "cards": cards, "top_ups": top_ups, "sales": sales })
+        return render(request, "user.html", { "user_info": user, "cards": cards, "top_ups": top_ups, "sales": sales, "top_types": top_up_types })
     else:
         users = User.objects.all()
         return render(request, "user.html", { "users": users })

@@ -13,3 +13,8 @@
 a {
   text-decoration: none;
 }
+
+
+.pagination {
+  width: fit-content;
+}

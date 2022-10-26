@@ -1,4 +1,5 @@
 from django.db.models import Sum
+from django.core.paginator import Paginator
 from django.http.response import JsonResponse
 from django.shortcuts import render, HttpResponseRedirect
 from .models import *
@@ -138,4 +139,11 @@ def transactions(request):
     sales = list(SaleTransaction.objects.all())
     topups = list(TopUpTransaction.objects.all())
     transactions = sales + topups
-    return render(request, "transactions.html", { "transactions": transactions })
+    paginator = Paginator(transactions, 10)
+
+    try:
+        page = paginator.get_page(request.GET.get('page'))
+    except Exception:
+        page = paginator.page(1)
+    
+    return render(request, "transactions.html", { "transactions": page })

@@ -71,19 +71,17 @@
         <table class="table table-striped table-hover text-center align-middle">
           <thead>
             <tr>
-              <th>Sum</th>
               <th>Date</th>
-              <th>Added</th>
-              <th>Cancelled</th>
+              <th>Sum</th>
+              <th>Type</th>
             </tr>
           </thead>
           <tbody>
             {% for top_up in top_ups.object_list %}
             <tr>
-              <td>{{ top_up.transaction_sum }}</td>
               <td>{{ top_up.date }}</td>
-              <td>{{ top_up.added }}</td>
-              <td>{% if top_up.cancelled %}{{ top_up.cancelled }}{% endif %}</td>
+              <td>€{{ top_up.transaction_sum }}</td>
+              <td>{% if top_up.type == 1 %}Pin{% elif top_up.type == 2 %}Credit card{% endif %}</td>
             </tr>
           {% endfor %}
           </tbody>
@@ -99,21 +97,23 @@
         <table class="table table-striped table-hover text-center align-middle">
           <thead>
             <tr>
-              <th>Sum</th>
               <th>Date</th>
-              <th>Added</th>
-              <th>Cancelled</th>
+              <th>Sum</th>
+              <th>Products</th>
             </tr>
           </thead>
           <tbody>
-            {% for sale in sales.object_list %}
-            <tr>
-              <td>{{ sale.transaction_sum }}</td>
-              <td>{{ sale.date }}</td>
-              <td>{{ sale.added }}</td>
-              <td>{% if sale.cancelled %}{{ sale.cancelled }}{% endif %}</td>
+            {% for transaction in sales %}
+            <tr id="{{ transaction.key.id }}">
+              <td>{{ transaction.key.date }}</td>
+              <td>€{{ transaction.key.transaction_sum }}</td>
+              <td>
+                {% for product in transaction.values %}
+                  {{ product.amount }}x <a href="/products?edit={{ product.product_id.id }}">{{ product.product_id.name }}</a><br/>
+                {% endfor %}
+              </td>
             </tr>
-          {% endfor %}
+            {% endfor %}
           </tbody>
         </table>
         {% include "pagination_footer.html" with page=sales page_name='sales' %}

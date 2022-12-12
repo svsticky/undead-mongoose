@@ -138,3 +138,22 @@ function delete_vat(id) {
     document.querySelector(`#vat [id='${id}']`).remove();
   });
 }
+
+if (window.location.pathname.includes("transactions")) {
+  if (window.location.search.includes("top_ups")) {
+    const top_ups = document.getElementById("top-ups");
+    console.log(top_ups)
+    if (top_ups) {
+      document.getElementById("top-ups-tab").classList.add("active");
+      top_ups.classList.add("show");
+      top_ups.classList.add("active");
+    }
+  } else {
+    const sales = document.getElementById("sales");
+    if (sales) {
+      document.getElementById("sales-tab").classList.add("active");
+      sales.classList.add("show");
+      sales.classList.add("active");
+    }
+  }
+}

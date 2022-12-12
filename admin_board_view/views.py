@@ -2,6 +2,7 @@ from django.db.models import Sum
 from django.core.paginator import Paginator
 from django.http.response import JsonResponse
 from django.shortcuts import render, HttpResponseRedirect
+from itertools import groupby
 from .models import *
 import json
 
@@ -72,7 +73,10 @@ def users(request, user_id=None):
     if user_id:
         user = User.objects.get(id=user_id)
         top_ups = TopUpTransaction.objects.all().filter(user_id=user)
-        sales = SaleTransaction.objects.all().filter(user_id=user)
+        product_sales = list(ProductTransactions.objects.all().filter(transaction_id__user_id=user))
+        product_sale_groups = []
+        for designation, member_group in groupby(product_sales, lambda sale: sale.transaction_id):
+            product_sale_groups.append({ "key": designation, "values": list(member_group) })
 
         cards = []
         for i, card in enumerate(Card.objects.all().filter(user_id=user.id)):
@@ -86,9 +90,9 @@ def users(request, user_id=None):
             except Exception:
                 top_up_page = top_ups_paginator.page(1)
 
-            sales_paginator = Paginator(sales, 5)
+            sales_paginator = Paginator(product_sale_groups, 5)
             try:
-                sales_page = sales_paginator.get_page(request.GET.get('top_ups'))
+                sales_page = sales_paginator.get_page(request.GET.get('sales'))
             except Exception:
                 sales_page = sales_paginator.page(1)
 
@@ -148,14 +152,24 @@ def vat(request):
 
 
 def transactions(request):
-    sales = list(SaleTransaction.objects.all())
-    topups = list(TopUpTransaction.objects.all())
-    transactions = sales + topups
-    paginator = Paginator(transactions, 10)
-
+    # Top up paginator
+    top_ups = list(TopUpTransaction.objects.all())
+    top_ups_paginator = Paginator(top_ups, 5)
     try:
-        page = paginator.get_page(request.GET.get('page'))
+        top_up_page = top_ups_paginator.get_page(request.GET.get('top_ups'))
     except Exception:
-        page = paginator.page(1)
-    
-    return render(request, "transactions.html", { "transactions": page })
+        top_up_page = top_ups_paginator.page(1)
+
+    # Product sale paginator
+    product_sales = list(ProductTransactions.objects.all())
+    product_sale_groups = []
+    for designation, member_group in groupby(product_sales, lambda sale: sale.transaction_id):
+        product_sale_groups.append({ "key": designation, "values": list(member_group) })
+
+    sales_paginator = Paginator(product_sale_groups, 10)
+    try:
+        sales_page = sales_paginator.get_page(request.GET.get('sales'))
+    except Exception:
+        sales_page = sales_paginator.page(1)
+
+    return render(request, "transactions.html", { "top_ups": top_up_page, "sales": sales_page })

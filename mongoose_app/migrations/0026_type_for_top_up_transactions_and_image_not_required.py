@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('mongoose_app', '0024_product_enabled'),
+        ('mongoose_app', '0025_alter_product_name'),
     ]
 
     operations = [

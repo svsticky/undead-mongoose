@@ -23,8 +23,8 @@ def products(request):
 
         if product.is_valid():
             product.category = Category.objects.get(name=product.cleaned_data["category"])
-            p = product.save()
-            return HttpResponseRedirect("/products?edit="+str(p.id))
+            product.save()
+            return HttpResponseRedirect("/products")
 
     product, product_sales = None, None
     pf = ProductForm
@@ -43,15 +43,6 @@ def products(request):
     products = Product.objects.all()
     categories = Category.objects.all()
     return render(request, "products.html", { "products": products, "categories": categories, "product_form": pf, "current_product": product, "product_sales": product_sales })
-
-
-def edit(request):
-    id = request.POST.dict()['id']
-    product = Product.objects.get(id=id)
-
-    # Do some product editing stuff
-    
-    return JsonResponse({ "msg": f"Edited the product with id {product.id}" })
 
 
 def delete(request):
@@ -81,7 +72,7 @@ def users(request, user_id=None):
         cards = []
         for i, card in enumerate(Card.objects.all().filter(user_id=user.id)):
             cards.append({"info": card})
-            if card.active == False:
+            if card.active is False:
                 cards[i]["token"] = CardConfirmation.objects.get(card=card).token
 
             top_ups_paginator = Paginator(top_ups, 5)
@@ -102,7 +93,7 @@ def users(request, user_id=None):
         return render(request, "user.html", { "users": users })
 
 
-def settings(request):
+def settings_page(request):
     vat = VAT.objects.all()
     categories = Category.objects.all()
     return render(request, "settings.html", { "vat": vat, "categories": categories })
@@ -115,7 +106,7 @@ def category(request):
             if category["id"] == '0':
                 cat = Category.objects.create(name=category["name"], alcoholic=category["checked"])
                 cat.save()
-            elif "delete" in category and category["delete"] == True:
+            elif "delete" in category and category["delete"] is True:
                 cat = Category.objects.get(id=category["id"])
                 cat.delete()
             else:
@@ -124,7 +115,7 @@ def category(request):
                 cat.alcoholic = category["checked"]
                 cat.save()
 
-        return JsonResponse({ "msg": f"Updated the mongoose categories" })
+        return JsonResponse({ "msg": "Updated the mongoose categories" })
     except Exception as e:
         print(e)
         return JsonResponse({ "msg": "Something went wrong whilst trying to save the categories" }, status=400)
@@ -137,7 +128,7 @@ def vat(request):
             if vat["id"] == '0':
                 newVAT = VAT.objects.create(percentage=vat["percentage"])
                 newVAT.save()
-            elif "delete" in vat and vat["delete"] == True:
+            elif "delete" in vat and vat["delete"] is True:
                 delVAT = VAT.objects.get(id=vat["id"])
                 delVAT.delete()
             else:

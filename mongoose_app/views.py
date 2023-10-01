@@ -114,7 +114,13 @@ def create_transaction(request):
             status=400,
             content="Card not found")
 
-    user = card.user_id
+    user_id = card.user_id
+    user = User.objects.filter(user_id=user_id).first()
+    if (user.balance - trans_sum < 0):
+        return HttpResponse(
+            status=400,
+            content="Transaction failed, not enough balance"
+        )
 
     transaction = SaleTransaction.objects.create(
         user_id=user,
@@ -130,7 +136,7 @@ def create_transaction(request):
 
     return JsonResponse(
         {
-            'balance': user.balance
+            'balance': user.balance - trans_sum
         },
         status=201, safe=False)
 

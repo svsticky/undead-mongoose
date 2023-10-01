@@ -70,6 +70,8 @@ def users(request, user_id=None):
             product_sale_groups.append({ "key": designation, "values": list(member_group) })
 
         cards = []
+        top_up_page = None
+        sales_page = None
         for i, card in enumerate(Card.objects.all().filter(user_id=user.id)):
             cards.append({"info": card})
             if card.active is False:
@@ -136,7 +138,7 @@ def vat(request):
                 newVAT.percentage = vat["percentage"]
                 newVAT.save()
 
-        return JsonResponse({ "msg": f"Updated the mongoose VAT percentages" })
+        return JsonResponse({ "msg": "Updated the mongoose VAT percentages" })
     except Exception as e:
         print(e)
         return JsonResponse({ "msg": "Something went wrong whilst trying to save the VAT percentages" }, status=400)

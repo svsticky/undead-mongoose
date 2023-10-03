@@ -36,7 +36,7 @@
       </div>
     </nav>
     <div class="d-flex" style="min-height: calc(100vh - 56px);">
-    {% if user.is_authenticated %}
+    {% if user.is_superuser %}
       <div class="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark" style="width: 280px;">
         <div class="nav nav-pills flex-column mb-auto">
           <a href="/" class="nav-link text-white" aria-current="page">
@@ -95,11 +95,23 @@
           </div>
         </div>
       </main>
-    {% else %}
+    {% elif user.is_authenticated %}
       <main class="container mt-3">
         <h1>Not allowed</h1>
         <p>
-          You are not allowed to view this page as a non admin. Please login here:
+          You are not allowed to view this page as a non admin. Please logout and try again:
+        </p>
+        <form action="{% url 'oidc_logout' %}" method="post">
+          {% csrf_token %}
+          <button class="btn btn-primary" type="submit">Logout</button>
+        </form>
+       
+      </main>
+    {% else %}
+      <main class="container mt-3">
+        <h1>Unauthenticated</h1>
+        <p>
+          You are currently not logged in. Please log in using an admin account:
         </p>
         <a href="{% url 'oidc_authentication_init' %}"><button class="btn btn-primary">Login</button></a>
       </main>

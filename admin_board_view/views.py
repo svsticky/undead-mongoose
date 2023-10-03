@@ -70,24 +70,24 @@ def users(request, user_id=None):
             product_sale_groups.append({ "key": designation, "values": list(member_group) })
 
         cards = []
-        top_up_page = None
-        sales_page = None
         for i, card in enumerate(Card.objects.all().filter(user_id=user.id)):
             cards.append({"info": card})
             if card.active is False:
                 cards[i]["token"] = CardConfirmation.objects.get(card=card).token
 
-            top_ups_paginator = Paginator(top_ups, 5)
-            try:
-                top_up_page = top_ups_paginator.get_page(request.GET.get('top_ups'))
-            except Exception:
-                top_up_page = top_ups_paginator.page(1)
+        top_up_page = None
+        top_ups_paginator = Paginator(top_ups, 5)
+        try:
+            top_up_page = top_ups_paginator.get_page(request.GET.get('top_ups'))
+        except Exception:
+            top_up_page = top_ups_paginator.page(1)
 
-            sales_paginator = Paginator(product_sale_groups, 5)
-            try:
-                sales_page = sales_paginator.get_page(request.GET.get('sales'))
-            except Exception:
-                sales_page = sales_paginator.page(1)
+        sales_page = None
+        sales_paginator = Paginator(product_sale_groups, 5)
+        try:
+            sales_page = sales_paginator.get_page(request.GET.get('sales'))
+        except Exception:
+            sales_page = sales_paginator.page(1)
 
         return render(request, "user.html", { "user_info": user, "cards": cards, "top_ups": top_up_page, "sales": sales_page, "top_types": top_up_types })
     else:

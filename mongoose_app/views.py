@@ -33,7 +33,7 @@ def get_card(request):
     if 'uuid' in request.GET:
         card_uuid = request.GET.get('uuid')
         card = Card.objects.filter(card_id=card_uuid, active=True).first()
-        if card == None:
+        if card is None:
             return HttpResponse(status=404)
         user = card.user_id
         return JsonResponse(user.serialize(), safe=False)
@@ -114,8 +114,7 @@ def create_transaction(request):
             status=400,
             content="Card not found")
 
-    user_id = card.user_id
-    user = User.objects.filter(user_id=user_id).first()
+    user = card.user_id
     if (user.balance - trans_sum < 0):
         return HttpResponse(
             status=400,
@@ -278,7 +277,7 @@ def async_on_webhook(request):
         print(user_id)
         user = User.objects.filter(user_id=user_id).first()
         print(user.user_id)
-        if not user == None:
+        if not user is None:
             koala_response = requests.get(
                 settings.USER_URL + '/api/internal/member_by_id',
                 params={

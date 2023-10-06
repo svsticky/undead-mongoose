@@ -9,8 +9,7 @@ def get_koala_connection():
     db_host = os.getenv("KOALA_DB_HOST")
     db_port = os.getenv("KOALA_DB_PORT")
 
-    conn =  psycopg2.connect(f"dbname={db_name} user={db_user} password={db_password} host={db_host} port={db_port}")
-    return conn
+    return psycopg2.connect(f"dbname={db_name} user={db_user} password={db_password} host={db_host} port={db_port}")
 
 def get_mongoose_connection():
     db_name = os.getenv("DB_NAME")
@@ -19,8 +18,7 @@ def get_mongoose_connection():
     db_host = os.getenv("DB_HOST")
     db_port = os.getenv("DB_PORT")
 
-    conn = psycopg2.connect(f"dbname={db_name} user={db_user} password={db_password} host={db_host} port={db_port}")
-    return conn
+    return psycopg2.connect(f"dbname={db_name} user={db_user} password={db_password} host={db_host} port={db_port}")
 
 koala = get_koala_connection()
 mongoose = get_mongoose_connection()
@@ -40,7 +38,7 @@ def migrate_users():
         for user in koala_cursor.fetchall():
             id = user[0]
             
-            if user[2] == None:
+            if user[2] is None:
                 name = f"{user[1]} {user[3]}"
             else:
                 name = f"{user[1]} {user[2]} {user[3]}"
@@ -175,17 +173,29 @@ def create_product(name, price, category_id, vat_id):
 
 
 def clean_database():
+    delete_existing_transactions = """
+        delete from mongoose_app_producttransactions;
+    """
+
+    delete_existing_sales = """
+        delete from mongoose_app_saletransaction;
+    """
+
+    delete_existing_topups = """
+        delete from mongoose_app_topuptransaction;
+    """
+
     delete_existing_products = """
         delete from mongoose_app_product;
     """
     delete_existing_vat = """
         delete from mongoose_app_vat;
     """
-    
+
     delete_existing_categories = """
         delete from mongoose_app_category;
     """
-    
+
     delete_existing_cards = """
         delete from mongoose_app_card;
     """
@@ -197,7 +207,10 @@ def clean_database():
 
     with mongoose:
         mongoose_cursor = mongoose.cursor()
-        
+
+        mongoose_cursor.execute(delete_existing_transactions)
+        mongoose_cursor.execute(delete_existing_sales)
+        mongoose_cursor.execute(delete_existing_topups)
         mongoose_cursor.execute(delete_existing_products)
         mongoose_cursor.execute(delete_existing_vat)
         mongoose_cursor.execute(delete_existing_categories)

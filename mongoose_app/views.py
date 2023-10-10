@@ -135,7 +135,7 @@ def create_transaction(request):
 
     return JsonResponse(
         {
-            'balance': user.balance - trans_sum
+            'balance': user.balance
         },
         status=201, safe=False)
 

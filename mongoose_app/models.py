@@ -69,11 +69,12 @@ class Product(models.Model):
         return super().delete(using=using, keep_parents=keep_parents)
 
     def serialize(self) -> dict:
+        url = settings.BASE_URL + self.image.url if self.image else None
         return {
             'id': self.id,
             'name': self.name,
             'price': self.price,
-            'image_url': settings.BASE_URL + self.image.url
+            'image_url': url
         }
 
 
@@ -243,3 +244,7 @@ class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
         fields = ["name", "image", "price", "vat", "category", "enabled"]
+
+class Configuration(models.Model):
+    alc_time = models.TimeField(default="17:00:00",
+        help_text="Time from which alcohol sales are allowed")

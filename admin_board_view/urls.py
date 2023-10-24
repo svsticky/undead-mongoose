@@ -16,4 +16,6 @@ urlpatterns = [
     path('category/edit', views.category, name='category'),
     path('vat/edit', views.vat, name='vat'),
     path('settings/edit', views.settings_update, name='settings_update'),
+
+    path('transactions/export', views.export_sale_transactions, name='export_sale_transactions'),
 ]

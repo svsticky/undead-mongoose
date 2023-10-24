@@ -160,6 +160,16 @@ if (updateSettings) {
   });
 }
 
+// Export transactions
+const exportTransactions = document.getElementById("export-top-ups");
+if (exportTransactions) {
+  exportTransactions.addEventListener("click", e => {
+    const from = document.getElementById("from-date").value;
+    const to = document.getElementById("to-date").value;
+    const url = `/transactions/export?start_date=${from}&end_date=${to}`;
+    window.open(url, "_blank");
+  });
+}
 
 if (window.location.pathname.includes("transactions")) {
   if (window.location.search.includes("top_ups")) {

@@ -15,4 +15,5 @@ urlpatterns = [
 
     path('category/edit', views.category, name='category'),
     path('vat/edit', views.vat, name='vat'),
+    path('settings/edit', views.settings_update, name='settings_update'),
 ]

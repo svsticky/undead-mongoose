@@ -7,12 +7,13 @@ from django.views.decorators.http import require_http_methods
 from decimal import Decimal
 from django.conf import settings
 from .middleware import authenticated
-from .models import CardConfirmation, Category, Card, Product, ProductTransactions, SaleTransaction, TopUpTransaction, User
+from .models import CardConfirmation, Category, Card, Product, ProductTransactions, SaleTransaction, TopUpTransaction, User, Configuration
 from datetime import datetime, date
 from django.views.decorators.csrf import csrf_exempt
 import requests
 import threading
 from constance import config
+from django.utils import timezone
 
 import secrets
 
@@ -54,9 +55,10 @@ def get_products(request):
     # Calc age of user based on birthday
     today = date.today()
     age = today.year - user.birthday.year - ((today.month, today.day) < (user.birthday.month, user.birthday.day))
+    alc_time = Configuration.objects.get(pk=1).alc_time
 
-    now = datetime.now()
-    if now.time() > config.BEER_HOUR and age > 17:
+    now = timezone.localtime(timezone.now())
+    if now.time() > alc_time and age > 17:
         categories = Category.objects.all()
     else:
         categories = Category.objects.filter(alcoholic=False)

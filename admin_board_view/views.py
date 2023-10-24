@@ -40,7 +40,7 @@ def products(request):
                 "sum": transactions.values('product_price').annotate(sum=Sum('amount'))
             }
 
-    products = Product.objects.all()
+    products = Product.objects.all().order_by('name')
     categories = Category.objects.all()
     return render(request, "products.html", { "products": products, "categories": categories, "product_form": pf, "current_product": product, "product_sales": product_sales })
 
@@ -168,7 +168,7 @@ def settings_update(request):
 
 def transactions(request):
     # Top up paginator
-    top_ups = list(TopUpTransaction.objects.all())
+    top_ups = TopUpTransaction.objects.all()
     top_ups_paginator = Paginator(top_ups, 5)
     try:
         top_up_page = top_ups_paginator.get_page(request.GET.get('top_ups'))
@@ -176,9 +176,10 @@ def transactions(request):
         top_up_page = top_ups_paginator.page(1)
 
     # Product sale paginator
-    product_sales = list(ProductTransactions.objects.all())
+    product_sales = ProductTransactions.objects.all()
+    product_sales_sorted = sorted(product_sales, key=lambda sale: sale.transaction_id.date, reverse=True)
     product_sale_groups = []
-    for designation, member_group in groupby(product_sales, lambda sale: sale.transaction_id):
+    for designation, member_group in groupby(product_sales_sorted, lambda sale: sale.transaction_id):
         product_sale_groups.append({ "key": designation, "values": list(member_group) })
 
     sales_paginator = Paginator(product_sale_groups, 10)

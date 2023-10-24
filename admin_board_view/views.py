@@ -98,7 +98,8 @@ def users(request, user_id=None):
 def settings_page(request):
     vat = VAT.objects.all()
     categories = Category.objects.all()
-    return render(request, "settings.html", { "vat": vat, "categories": categories })
+    configuration = Configuration.objects.get(pk=1)
+    return render(request, "settings.html", { "vat": vat, "categories": categories, "configuration": configuration })
 
 
 def category(request):
@@ -142,6 +143,27 @@ def vat(request):
     except Exception as e:
         print(e)
         return JsonResponse({ "msg": "Something went wrong whilst trying to save the VAT percentages" }, status=400)
+
+
+def settings_update(request):
+    """
+    Updates the configuration settings for the undead-mongoose application.
+
+    Args:
+        request (HttpRequest): The HTTP request object containing the updated configuration settings.
+
+    Returns:
+        JsonResponse: A JSON response indicating whether the configuration settings were successfully updated or not.
+    """
+    try:
+        configuration = Configuration.objects.get(pk=1)
+        settings = json.loads(request.POST.dict()['settings'])
+        configuration.alc_time = settings['alc_time']
+        configuration.save()
+        return JsonResponse({ "msg": "Updated the mongoose configuration" })
+    except Exception as e:
+        print(e)
+        return JsonResponse({ "msg": "Something went wrong whilst trying to save the configuration" }, status=400)
 
 
 def transactions(request):

@@ -139,6 +139,28 @@ function delete_vat(id) {
   });
 }
 
+// Update settings
+const updateSettings = document.getElementById("update-settings");
+if (updateSettings) {
+  updateSettings.addEventListener("click", e => {
+    const data = {
+      alc_time: document.getElementById("alc_time").value,
+    };
+
+    $.ajax({
+      url: `/settings/edit`,
+      data: {
+        "csrfmiddlewaretoken": csrf_token,
+        "settings": JSON.stringify(data)
+      },
+      type: "post"
+    }).then(response => {
+      showToast("Updated settings", response.msg);
+    });
+  });
+}
+
+
 if (window.location.pathname.includes("transactions")) {
   if (window.location.search.includes("top_ups")) {
     const top_ups = document.getElementById("top-ups");

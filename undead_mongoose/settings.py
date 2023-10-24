@@ -155,9 +155,7 @@ MAILGUN_TOKEN = os.getenv('MAILGUN_TOKEN')
 
 CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
 
-CONSTANCE_CONFIG = {
-    'BEER_HOUR': (time(17, 00), 'Value between 0:00 and 23:00. Determines when alcohol may be sold.')
-}
+CONSTANCE_CONFIG = {}
 
 CONSTANCE_DATABASE_PREFIX = 'constance:settings:'
 

@@ -50,6 +50,23 @@ function delete_product(id) {
   });
 }
 
+// Filter products
+const filter_input = document.getElementById("filter-products");
+if (filter_input) {
+  filter_input.addEventListener("keyup", e => {
+    const filter = filter_input.value.toLowerCase();
+    const products = document.getElementsByClassName("product-row");
+    Array.from(products).forEach(product => {
+      const name = product.querySelector(".product-name").innerHTML.toLowerCase();
+      if (name.includes(filter)) {
+        product.style.display = "";
+      } else {
+        product.style.display = "none";
+      }
+    });
+  });
+}
+
 const params = new URLSearchParams(window.location.search);
 if (params.get("edit")) {
   productModal.show()

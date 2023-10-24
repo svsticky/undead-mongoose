@@ -2,6 +2,8 @@ from django.db.models import Sum
 from django.core.paginator import Paginator
 from django.http.response import JsonResponse
 from django.shortcuts import render, HttpResponseRedirect
+from django.http import HttpResponse
+from django.utils import timezone
 from itertools import groupby
 from .models import *
 import json
@@ -189,3 +191,39 @@ def transactions(request):
         sales_page = sales_paginator.page(1)
 
     return render(request, "transactions.html", { "top_ups": top_up_page, "sales": sales_page })
+
+
+def export_sale_transactions(request):
+    """
+    Exports the sale transactions in the given date range to a csv file.
+
+    Args:
+        request (HttpRequest): The HTTP request object containing the date range.
+    
+    Returns:
+        HttpResponse: The csv file containing the sale transactions in the given date range.
+    """
+    try:
+        if not request.GET.get('start_date') or not request.GET.get('end_date'):
+            return HttpResponse("No date range given.", status=400)
+
+        # Get the date range from the request
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        current_date = timezone.now().strftime("%Y-%m-%d")
+
+        # Get the transactions in the date range
+        top_up_range = TopUpTransaction.objects.filter(date__range=[start_date, end_date]).all()
+
+        # Setup the export "csv"
+        response_string = f'Factuurdatum,{current_date},ideal - {start_date} / {end_date},02,473\n'
+
+        # Add the transactions to the export "csv"
+        for t in top_up_range:
+            response_string += f'"",8002,Mongoose - {t.id},9,{t.transaction_sum},""\n'
+
+        # Return the export "csv"
+        return HttpResponse(response_string, content_type='text/csv')
+    except Exception as e:
+        print(e)
+        return HttpResponse("Something went wrong whilst trying to export the sale transactions.", status=400)

@@ -4,7 +4,7 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-    def create_initial_row(self):
+    def create_initial_row(self, _):
         Configuration = self.get_model('mongoose_app', 'Configuration')
         Configuration.objects.create(alc_time="17:00:00")
 

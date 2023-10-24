@@ -1,3 +1,10 @@
+.container {
+  max-height: calc(100vh - 65px);
+  overflow-y: scroll;
+  margin-top: 0 !important;
+  padding-top: 10px;
+}
+
 .board-color {
   background-color: #29738f;
 }

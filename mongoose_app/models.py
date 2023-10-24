@@ -236,9 +236,9 @@ class ProductForm(forms.ModelForm):
                             label=mark_safe('<label class="form-label">Price</label>'))
     image = forms.ImageField(widget=forms.FileInput(attrs={'class': 'form-control'}), required=False,
                             label=mark_safe('<label class="form-label">Image</label>'))
-    vat = forms.ModelChoiceField(queryset=VAT.objects.all(), widget=forms.Select(attrs={'class': 'form-control'}),
+    vat = forms.ModelChoiceField(queryset=VAT.objects.all(), widget=forms.Select(attrs={'class': 'form-select'}),
                             label=mark_safe('<label class="form-label">VAT</label>'))
-    category = forms.ModelChoiceField(queryset=Category.objects.all(), widget=forms.Select(attrs={'class': 'form-control'}),
+    category = forms.ModelChoiceField(queryset=Category.objects.all(), widget=forms.Select(attrs={'class': 'form-select'}),
                             label=mark_safe('<label class="form-label">Category</label>'))
 
     class Meta:

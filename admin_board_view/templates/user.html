@@ -18,7 +18,7 @@
               <span class="input-group-text">€</span>
               <input type="text" class="form-control" id="amount" placeholder="15.15"/>
             </td>
-            <select class="form-control" id="type">
+            <select class="form-select" id="type">
               {% for option in top_types %}
                 <option value="{{ option.0 }}">{{ option.1 }}</option>
               {% endfor %}

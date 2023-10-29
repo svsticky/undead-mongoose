@@ -8,6 +8,7 @@ from decimal import Decimal
 from django.core.validators import MaxValueValidator, MinValueValidator
 #from django.utils.translation import Trans
 
+
 class Category(models.Model):
     name = models.CharField(max_length=30)
     alcoholic = models.BooleanField(default=False)
@@ -91,6 +92,23 @@ class ProductTransactions(models.Model):
 
     class Meta:
         verbose_name_plural = "Products"
+
+
+class NamedTransactionProductTotal(models.Model):
+    name = models.CharField(max_length=60)
+    product_id = models.IntegerField()
+    amount = models.IntegerField()
+
+    class Meta:
+        managed = False
+
+    def serialize(self) -> dict:
+        return {
+            'name': self.name,
+            'id': self.product_id,
+            'amount': self.amount
+        }
+
 
 # Every transaction has at least a link with a user, an id and a sum
 # Whether this sum has a negative or positive influence on the total credit depends on the type of transaction

@@ -64,6 +64,7 @@
           </a>
           <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser1">
             <form action="{% url 'oidc_logout' %}" method="post">
+              {% csrf_token %}
               <input class="dropdown-item" type="submit" value="Sign out">
             </form>
           </ul>

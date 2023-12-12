@@ -38,8 +38,14 @@ const showUser = document.getElementById("show-user");
 if (showUser) { 
   document.getElementById("show-user").addEventListener("click", e => {
     const name = document.getElementById("user").value;
-    const userId = document.getElementById("userOptions").querySelector(`[value='${name}']`).id;
-    window.location = `/users/${userId}`;
+    const user_options = document.getElementById("userOptions");
+    const selected_user = user_options.querySelector(`[value='${name}']`);
+    if (!selected_user) {
+      showToast("Show user - Failed", "User not found");
+    } else {
+      const userId = selected_user.id;
+      window.location = `/users/${userId}`;
+    }
   });
 }
 

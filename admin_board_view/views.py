@@ -1,7 +1,6 @@
 import json
 
 from django.db.models import Sum
-from django.core.paginator import Paginator
 from django.http.response import JsonResponse
 from django.shortcuts import render, HttpResponseRedirect
 from django.http import HttpResponse
@@ -9,6 +8,7 @@ from django.utils import timezone
 from itertools import groupby
 
 from admin_board_view.middleware import dashboard_authenticated, dashboard_admin
+from admin_board_view.utils import create_paginator
 from .models import *
 
 
@@ -19,7 +19,19 @@ def index(request):
         total_balance = sum(user.balance for user in User.objects.all())
         return render(request, "home.html", {"users": User.objects.all(), "product_amount": product_amount, "total_balance": total_balance, "top_types": top_up_types })
     else:
-        return render(request, "user_home.html")
+        user = User.objects.get(user_id=request.user.id)
+
+        # Get product sales
+        product_sales = list(ProductTransactions.objects.all().filter(transaction_id__user_id=user))
+        product_sale_groups = []
+        for designation, member_group in groupby(product_sales, lambda sale: sale.transaction_id):
+            product_sale_groups.append({ "key": designation, "values": list(member_group) })
+        sales_page = create_paginator(product_sale_groups, request.GET.get('sales'))
+
+        # Get topup page
+        top_ups = TopUpTransaction.objects.all().filter(user_id=user)
+        top_up_page = create_paginator(top_ups, request.GET.get('top_ups'))
+        return render(request, "user_home.html", {"user_info": user, "top_ups": top_up_page, "sales": sales_page })
 
 
 def login(request):
@@ -78,7 +90,6 @@ def toggle(request):
 @dashboard_admin
 def users(request, user_id=None):
     user, cards = None, None
-    print(user_id)
     if user_id:
         user = User.objects.get(id=user_id)
         top_ups = TopUpTransaction.objects.all().filter(user_id=user)
@@ -93,19 +104,8 @@ def users(request, user_id=None):
             if card.active is False:
                 cards[i]["token"] = CardConfirmation.objects.get(card=card).token
 
-        top_up_page = None
-        top_ups_paginator = Paginator(top_ups, 5)
-        try:
-            top_up_page = top_ups_paginator.get_page(request.GET.get('top_ups'))
-        except Exception:
-            top_up_page = top_ups_paginator.page(1)
-
-        sales_page = None
-        sales_paginator = Paginator(product_sale_groups, 5)
-        try:
-            sales_page = sales_paginator.get_page(request.GET.get('sales'))
-        except Exception:
-            sales_page = sales_paginator.page(1)
+        top_up_page = create_paginator(top_ups, request.GET.get('top_ups'))
+        sales_page = create_paginator(product_sale_groups, request.GET.get('sales'))
 
         return render(request, "user.html", { "user_info": user, "cards": cards, "top_ups": top_up_page, "sales": sales_page, "top_types": top_up_types })
     else:
@@ -190,26 +190,16 @@ def settings_update(request):
 
 @dashboard_admin
 def transactions(request):
-    # Top up paginator
-    top_ups = TopUpTransaction.objects.all()
-    top_ups_paginator = Paginator(top_ups, 5)
-    try:
-        top_up_page = top_ups_paginator.get_page(request.GET.get('top_ups'))
-    except Exception:
-        top_up_page = top_ups_paginator.page(1)
-
-    # Product sale paginator
+    # Get product sale groups
     product_sales = ProductTransactions.objects.all()
     product_sales_sorted = sorted(product_sales, key=lambda sale: sale.transaction_id.date, reverse=True)
     product_sale_groups = []
     for designation, member_group in groupby(product_sales_sorted, lambda sale: sale.transaction_id):
         product_sale_groups.append({ "key": designation, "values": list(member_group) })
-
-    sales_paginator = Paginator(product_sale_groups, 10)
-    try:
-        sales_page = sales_paginator.get_page(request.GET.get('sales'))
-    except Exception:
-        sales_page = sales_paginator.page(1)
+    
+    # Get paginators
+    top_up_page = create_paginator(TopUpTransaction.objects.all(), request.GET.get('top_ups'))
+    sales_paginator = create_paginator(product_sale_groups, request.GET.get('sales'), p_len=10)
 
     return render(request, "transactions.html", { "top_ups": top_up_page, "sales": sales_page })
 

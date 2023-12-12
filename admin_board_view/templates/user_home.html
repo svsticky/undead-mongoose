@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load static %}
+{% block body %}
+<main class="container mt-3">
+  <h1>Welcome {{ user }}</h1>
+  <p>
+    You are not allowed to view this page as a non admin. Please logout and try again:
+  </p>
+  <form action="{% url 'oidc_logout' %}" method="post">
+    {% csrf_token %}
+    <button class="btn btn-primary" type="submit">Logout</button>
+  </form>
+</main>
+{% endblock %}

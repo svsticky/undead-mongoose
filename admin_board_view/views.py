@@ -1,3 +1,5 @@
+import json
+
 from django.db.models import Sum
 from django.core.paginator import Paginator
 from django.http.response import JsonResponse
@@ -5,16 +7,26 @@ from django.shortcuts import render, HttpResponseRedirect
 from django.http import HttpResponse
 from django.utils import timezone
 from itertools import groupby
+
+from admin_board_view.middleware import dashboard_authenticated, dashboard_admin
 from .models import *
-import json
 
 
+@dashboard_authenticated
 def index(request):
-    product_amount = Product.objects.count()
-    total_balance = sum(user.balance for user in User.objects.all())
-    return render(request, "home.html", {"users": User.objects.all(), "product_amount": product_amount, "total_balance": total_balance, "top_types": top_up_types })
+    if request.user.is_superuser:
+        product_amount = Product.objects.count()
+        total_balance = sum(user.balance for user in User.objects.all())
+        return render(request, "home.html", {"users": User.objects.all(), "product_amount": product_amount, "total_balance": total_balance, "top_types": top_up_types })
+    else:
+        return render(request, "user_home.html")
 
 
+def login(request):
+    return render(request, "login.html")
+
+
+@dashboard_admin
 def products(request):
     if request.POST:
         product = ProductForm(request.POST, request.FILES)
@@ -47,12 +59,14 @@ def products(request):
     return render(request, "products.html", { "products": products, "categories": categories, "product_form": pf, "current_product": product, "product_sales": product_sales })
 
 
+@dashboard_admin
 def delete(request):
     id = request.POST.dict()['id']
     Product.objects.get(id=id).delete()
     return JsonResponse({ "msg": f"Deleted product with {id}" })
 
 
+@dashboard_admin
 def toggle(request):
     id = request.POST.dict()['id']
     product = Product.objects.get(id=id)
@@ -61,8 +75,10 @@ def toggle(request):
     return JsonResponse({ "msg": f"Set the state of product {id} to enabled={product.enabled}" })
 
 
+@dashboard_admin
 def users(request, user_id=None):
     user, cards = None, None
+    print(user_id)
     if user_id:
         user = User.objects.get(id=user_id)
         top_ups = TopUpTransaction.objects.all().filter(user_id=user)
@@ -97,6 +113,7 @@ def users(request, user_id=None):
         return render(request, "user.html", { "users": users })
 
 
+@dashboard_admin
 def settings_page(request):
     vat = VAT.objects.all()
     categories = Category.objects.all()
@@ -104,6 +121,7 @@ def settings_page(request):
     return render(request, "settings.html", { "vat": vat, "categories": categories, "configuration": configuration })
 
 
+@dashboard_admin
 def category(request):
     try:
         categories = json.loads(request.POST.dict()['categories'])
@@ -126,6 +144,7 @@ def category(request):
         return JsonResponse({ "msg": "Something went wrong whilst trying to save the categories" }, status=400)
 
 
+@dashboard_admin
 def vat(request):
     try:
         vatBody = json.loads(request.POST.dict()['vat'])
@@ -147,6 +166,7 @@ def vat(request):
         return JsonResponse({ "msg": "Something went wrong whilst trying to save the VAT percentages" }, status=400)
 
 
+@dashboard_admin
 def settings_update(request):
     """
     Updates the configuration settings for the undead-mongoose application.
@@ -168,6 +188,7 @@ def settings_update(request):
         return JsonResponse({ "msg": "Something went wrong whilst trying to save the configuration" }, status=400)
 
 
+@dashboard_admin
 def transactions(request):
     # Top up paginator
     top_ups = TopUpTransaction.objects.all()
@@ -193,6 +214,7 @@ def transactions(request):
     return render(request, "transactions.html", { "top_ups": top_up_page, "sales": sales_page })
 
 
+@dashboard_admin
 def export_sale_transactions(request):
     """
     Exports the sale transactions in the given date range to a csv file.
@@ -203,10 +225,6 @@ def export_sale_transactions(request):
     Returns:
         HttpResponse: The csv file containing the sale transactions in the given date range.
     """
-    # Only allow export for authanticated users
-    if not request.user.is_superuser:
-        return HttpResponse("You are not authenticated.", status=401)
-
     try:
         req_get = request.GET
         export_type = req_get.get('type')

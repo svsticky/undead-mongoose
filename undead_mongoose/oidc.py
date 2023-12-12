@@ -1,5 +1,4 @@
 from mozilla_django_oidc.auth import OIDCAuthenticationBackend
-#from myapp.models import Profile
 
 class UndeadMongooseOIDC(OIDCAuthenticationBackend):
     def create_user(self, claims):
@@ -8,7 +7,6 @@ class UndeadMongooseOIDC(OIDCAuthenticationBackend):
             user.is_superuser = True
             user.is_staff = True
         user.username = claims['email']
-        user.id = claims['sub']
         user.save()
 
         return user
@@ -18,7 +16,6 @@ class UndeadMongooseOIDC(OIDCAuthenticationBackend):
             user.is_superuser = True
             user.is_staff = True
         user.username = claims['email']
-        user.id = claims['sub']
         user.save()
 
         return user

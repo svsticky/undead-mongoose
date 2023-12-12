@@ -177,6 +177,7 @@ class User(models.Model):
     user_id = models.IntegerField(unique=True)
     name = models.CharField(max_length=50)
     birthday = models.DateField()
+    email = models.EmailField(max_length=254, null=True, blank=True)
     balance = models.DecimalField(decimal_places=2, max_digits=6, default=Decimal('0.00'))
 
     def __str__(self):

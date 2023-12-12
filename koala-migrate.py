@@ -24,9 +24,39 @@ def get_mongoose_connection():
 koala = get_koala_connection()
 mongoose = get_mongoose_connection()
 
+
+def migrate_email():
+    query = """
+        select members.id, members.email
+        from public.members
+        inner join checkout_balances on members.id = checkout_balances.member_id;
+    """
+
+    with koala:
+        koala_cursor = koala.cursor()
+        koala_cursor.execute(query)
+
+        for user in koala_cursor.fetchall():
+            id = user[0]
+            email = user[1]
+            update_email(id, email)
+
+
+def update_email(id, email):
+    query = """
+        update public.mongoose_app_user
+        set email = %s
+        where user_id = %s;
+    """
+
+    with mongoose:
+        mongoose_cursor = mongoose.cursor()
+        mongoose_cursor.execute(query, (email, id))
+
+
 def migrate_users():
     select_members_with_tegoed = """
-        select members.id, members.first_name, members.infix, members.last_name, members.birth_date, checkout_balances.balance
+        select members.id, members.first_name, members.infix, members.last_name, members.birth_date, checkout_balances.balance, members.email
         from public.members
         inner join checkout_balances on members.id = checkout_balances.member_id;
     """
@@ -46,20 +76,20 @@ def migrate_users():
 
             birthday = user[4]
             balance = user[5]
+            email = user[6]
 
-            create_user_with_tegoed(id, balance, name, birthday)
+            create_user_with_tegoed(id, balance, name, birthday, email)
 
-# TODO: use execute_many to insert a whole batch at once and reuse the connection
-def create_user_with_tegoed(id, balance, name, birthday):
+
+def create_user_with_tegoed(id, balance, name, birthday, email):
     query = """
-        insert into public.mongoose_app_user(user_id, balance, name, birthday)
-        values (%s, %s, %s, %s);
+        insert into public.mongoose_app_user(user_id, balance, name, birthday, email)
+        values (%s, %s, %s, %s, %s);
     """
 
     with mongoose:
         mongoose_cursor = mongoose.cursor()
-
-        mongoose_cursor.execute(query, (id, balance, name, birthday))
+        mongoose_cursor.execute(query, (id, balance, name, birthday, email))
 
 
 def migrate_cards():

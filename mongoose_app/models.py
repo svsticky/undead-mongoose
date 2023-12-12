@@ -10,7 +10,8 @@ from django.template.defaultfilters import mark_safe
 
 top_up_types = [
     (1, "Pin"),
-    (2, "Credit card")
+    (2, "Credit card"),
+    (3, "Mollie")
 ]
 
 

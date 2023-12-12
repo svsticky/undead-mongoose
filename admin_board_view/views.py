@@ -203,6 +203,10 @@ def export_sale_transactions(request):
     Returns:
         HttpResponse: The csv file containing the sale transactions in the given date range.
     """
+    # Only allow export for authanticated users
+    if not request.user.is_superuser:
+        return HttpResponse("You are not authenticated.", status=401)
+
     try:
         req_get = request.GET
         export_type = req_get.get('type')

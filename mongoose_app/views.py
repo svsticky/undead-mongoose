@@ -234,7 +234,8 @@ def register_card(request):
         user = User.objects.create(
             user_id=user_id,
             name=f'{first_name} {infix} {last_name}' if infix else f'{first_name} {last_name}',
-            birthday=born
+            birthday=born,
+            email=koala_response['email']
         )
         card = Card.objects.create(
             card_id=card_id,

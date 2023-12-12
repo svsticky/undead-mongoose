@@ -19,7 +19,7 @@ def index(request):
         total_balance = sum(user.balance for user in User.objects.all())
         return render(request, "home.html", {"users": User.objects.all(), "product_amount": product_amount, "total_balance": total_balance, "top_types": top_up_types })
     else:
-        user = User.objects.get(user_id=request.user.id)
+        user = User.objects.get(email=request.user.email)
 
         # Get product sales
         product_sales = list(ProductTransactions.objects.all().filter(transaction_id__user_id=user))

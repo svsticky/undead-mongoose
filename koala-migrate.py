@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import psycopg2
+import requests
 import os
 
 def get_koala_connection():
@@ -8,10 +9,17 @@ def get_koala_connection():
     db_password = os.getenv("KOALA_DB_PASSWORD")
     db_host = os.getenv("KOALA_DB_HOST")
     db_port = os.getenv("KOALA_DB_PORT")
-    return psycopg2.connect(f"dbname={db_name} user={db_user} password={db_password} host={db_host} port={db_port}")
+
+    return psycopg2.connect("postgresql:///koala")
 
 def get_mongoose_connection():
-    return psycopg2.connect(f"postgresql:///undead_mongoose")
+    db_name = os.getenv("DB_NAME")
+    db_user = os.getenv("DB_USER")
+    db_password = os.getenv("DB_PASSWORD")
+    db_host = os.getenv("DB_HOST")
+    db_port = os.getenv("DB_PORT")
+
+    return psycopg2.connect("postgresql:///mongoose")
 
 koala = get_koala_connection()
 mongoose = get_mongoose_connection()
@@ -43,7 +51,7 @@ def migrate_users():
 
 # TODO: use execute_many to insert a whole batch at once and reuse the connection
 def create_user_with_tegoed(id, balance, name, birthday):
-    query = f"""
+    query = """
         insert into public.mongoose_app_user(user_id, balance, name, birthday)
         values (%s, %s, %s, %s);
     """
@@ -91,7 +99,7 @@ def get_userid_by_koala_id(koala_id):
 
 
 def create_card(card_id, active, user_id):
-    query = f"""
+    query = """
         insert into public.mongoose_app_card(card_id, active, user_id_id)
         values (%s, %s, %s);
     """
@@ -103,14 +111,14 @@ def create_card(card_id, active, user_id):
 
 
 def create_categories():
-    query = f"""
+    query = """
         insert into mongoose_app_category(id,name,alcoholic)
         values
-            (1, 'beverage', false),
-            (2, 'chocolate', false),
-            (3, 'savory', false),
-            (4, 'additional', false),
-            (5, 'liquor', true);
+            (1, 'Beverage', false),
+            (2, 'Chocolate', false),
+            (3, 'Savory', false),
+            (4, 'Additional', false),
+            (5, 'Liquor', true);
     """
 
     with mongoose:
@@ -120,7 +128,7 @@ def create_categories():
 
 
 def create_vat():
-    query = f"""
+    query = """
         insert into mongoose_app_vat(id,percentage)
         values
             (1, 9),
@@ -134,8 +142,24 @@ def create_vat():
 
 
 def migrate_products():
+    # Fetch products
+    token = os.environ["KOALA_CHECKOUT_TOKEN"]
+    req = requests.get(f"https://koala.svsticky.nl/api/checkout/products?token={token}")
+    data = req.json()
+    product_imgs = {f"{product['id']}": {
+        "name": str(product["id"]) + ".png",
+        "url": product["image"]
+    } for product in data}
+
+    # Download each image
+    for (_, prod_info) in product_imgs.items():
+        filename = f"./images/{prod_info['name']}"
+
+        req_img = requests.get(prod_info['url'], allow_redirects=True)
+        open(filename, 'wb').write(req_img.content)
+
     query = """
-        select name, category, price
+        select id, name, category, price
         from public.checkout_products
         where active = true;
     """
@@ -146,24 +170,27 @@ def migrate_products():
         koala_cursor.execute(query)
         
         for product in koala_cursor.fetchall():
-            name = product[0]
-            category_id = product[1]
-            price = product[2]
+            prod_id = product[0]
+            name = product[1]
+            category_id = product[2]
+            price = product[3]
             vat_id = 1 if category_id == 5 else 2
 
-            create_product(name, price, category_id, vat_id)
+            image_url = product_imgs[str(prod_id)]['name']
+
+            create_product(name, price, image_url, category_id, vat_id)
 
 
-def create_product(name, price, category_id, vat_id):
-    query = f"""
-        insert into public.mongoose_app_product(name, price, category_id, vat_id)
-        values (%s, %s, %s, %s);
+def create_product(name, price, image_url, category_id, vat_id):
+    query = """
+        insert into public.mongoose_app_product(name, price, image, category_id, vat_id, enabled)
+        values (%s, %s, %s, %s, %s, True);
     """
 
     with mongoose:
         mongoose_cursor = mongoose.cursor()
 
-        mongoose_cursor.execute(query, (name, price, category_id, vat_id))
+        mongoose_cursor.execute(query, (name, price, image_url, category_id, vat_id))
 
 
 def clean_database():

@@ -16,6 +16,13 @@
         <label for="to-date" class="form-label">To: </label>
         <input type="date" id="to-date" class="form-control" value="{% now "Y-m-d" %}"/>
       </div>
+      <div class="col">
+        <label for="export-type" class="form-label">Type of export: </label>
+        <select id="export-type" class="form-select">
+          <option value="pin">PIN</option>
+          <option value="mollie">Mollie</option>
+        </select>
+      </div>
     </section>
     <button id="export-top-ups" class="btn btn-primary mt-2">Export</button>
     <hr/>

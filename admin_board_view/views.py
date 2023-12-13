@@ -199,7 +199,7 @@ def transactions(request):
     
     # Get paginators
     top_up_page = create_paginator(TopUpTransaction.objects.all(), request.GET.get('top_ups'))
-    sales_paginator = create_paginator(product_sale_groups, request.GET.get('sales'), p_len=10)
+    sales_page = create_paginator(product_sale_groups, request.GET.get('sales'), p_len=10)
 
     return render(request, "transactions.html", { "top_ups": top_up_page, "sales": sales_page })
 

@@ -324,12 +324,12 @@ def send_confirmation(email, card):
                 f"""
                 Beste sticky lid,
 
-                Je hebt zojuist een nieuwe kaart gekoppeld aan het mongoose vreet/zuipsysteem.
+                Je hebt zojuist een nieuwe kaart gekoppeld aan Mongoose.
                 Om je kaart te koppelen, volg de volgende link:
-                {settings.BASE_URL}/confirm?token={token}
+                {settings.BASE_URL}/api/confirm?token={token}
 
-                Met vriendelijke groetjes,
-                BESTUUUUUUUUUUR
+                Kusjes en knuffels,
+                Sticky bestuur
                 """
         }
     )

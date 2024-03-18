@@ -110,7 +110,13 @@ def users(request, user_id=None):
         return render(request, "user.html", { "user_info": user, "cards": cards, "top_ups": top_up_page, "sales": sales_page, "top_types": top_up_types })
     else:
         users = User.objects.all()
-        return render(request, "user.html", { "users": users })
+        
+        # Only filter on user name if a name is given
+        if request.GET.get('name'):
+            users = users.filter(name__icontains=request.GET.get('name'))
+
+        user_page = create_paginator(users, request.GET.get('users'), p_len=15)
+        return render(request, "user.html", { "users": users, "user_page": user_page })
 
 
 @dashboard_admin

@@ -33,6 +33,22 @@ function showConfirmation(title, body, id) {
   modal.show();
 }
 
+// Filter user page
+document.getElementById("user").addEventListener("keypress", e => {
+  if (e.key === "Enter") {
+    const name = document.getElementById("user").value;
+    const escapedName = name.replace("'", "\\'");
+    const user_options = document.getElementById("userOptions");
+    const selected_user = user_options.querySelector(`[value='${escapedName}']`);
+    if (!selected_user) {
+      window.location = `/users?name=${name}`;
+    } else {
+      const userId = selected_user.id;
+      window.location = `/users/${userId}`;
+    }
+  }
+});
+
 // Show user page
 const showUser = document.getElementById("show-user");
 if (showUser) { 

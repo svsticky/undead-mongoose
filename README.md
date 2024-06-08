@@ -75,5 +75,5 @@ CHECKOUT_TOKEN=koala
 # database
 docker-compose up -d
 # server
-nix-shell --run "./manage.py runserver"
+dotenv nix-shell --run "./manage.py runserver"
 ```

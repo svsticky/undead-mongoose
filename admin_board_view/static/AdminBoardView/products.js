@@ -54,17 +54,59 @@ function delete_product(id) {
 const filter_input = document.getElementById("filter-products");
 if (filter_input) {
   filter_input.addEventListener("keyup", e => {
-    const filter = filter_input.value.toLowerCase();
+    if(e.key != "Enter") return;
+    const filter_string = filter_input.value.toLowerCase();
+    const filters = getFilters(filter_string) 
     const products = document.getElementsByClassName("product-row");
     Array.from(products).forEach(product => {
+
       const name = product.querySelector(".product-name").innerHTML.toLowerCase();
-      if (name.includes(filter)) {
+      const category = product.querySelector(".product-category").innerHTML.toLowerCase();
+      const active = product.getAttribute("data-status").toLowerCase();
+
+      let activeFilter = ""
+      if(active == "true") activeFilter = "active";
+      if(active == "false") activeFilter = "inactive"; 
+
+      const nameMatches = !filters.name || name.includes(filters.name);
+      const categoryMatches = !filters.category || category.includes(filters.category);
+      const statusMatches = !filters.status || activeFilter == filters.status;
+
+      //hide elements not matching all filters
+      if (nameMatches && categoryMatches && statusMatches) {
         product.style.display = "";
       } else {
         product.style.display = "none";
       }
     });
   });
+}
+
+function getFilters(filter_string)
+{
+  strings = filter_string.split(" ");
+  filters = {
+    "category" : "",
+    "status" : "",
+    "name" : ""
+  }
+
+  strings.forEach(string => {
+    let [type, value] = string.toLowerCase().split(":")
+    //If type is specified
+    if(value != undefined){
+      if(filters.hasOwnProperty(type)){
+        filters[type] = value
+      }
+    }
+    //Add to name search if no type is specified
+    else{
+      filters["name"] += type + " "
+    }
+  }
+  )
+  filters.name = filters.name.trim(); // Remove trailing space
+  return filters   //Return dictionary of filters
 }
 
 const params = new URLSearchParams(window.location.search);

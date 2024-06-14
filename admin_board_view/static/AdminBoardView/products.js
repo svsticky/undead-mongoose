@@ -51,34 +51,98 @@ function delete_product(id) {
 }
 
 // Filter products
-const filter_input = document.getElementById("filter-products");
-if (filter_input) {
-  filter_input.addEventListener("keyup", e => {
-    if(e.key != "Enter") return;
-    const filter_string = filter_input.value.toLowerCase();
-    const filters = getFilters(filter_string) 
-    const products = document.getElementsByClassName("product-row");
-    Array.from(products).forEach(product => {
+const filterInput = document.getElementById("filter-products");
+const suggestionsContainer = document.getElementById("autocomplete-suggestions");
 
-      const name = product.querySelector(".product-name").innerHTML.toLowerCase();
-      const category = product.querySelector(".product-category").innerHTML.toLowerCase();
-      const active = product.getAttribute("data-status").toLowerCase();
+// Sample categories and statuses for demonstration purposes
+const categories = ["electronics", "furniture", "clothing", "books"];
+const statuses = ["active", "inactive"];
 
-      let activeFilter = ""
-      if(active == "true") activeFilter = "active";
-      if(active == "false") activeFilter = "inactive"; 
-
-      const nameMatches = !filters.name || name.includes(filters.name);
-      const categoryMatches = !filters.category || category.includes(filters.category);
-      const statusMatches = !filters.status || activeFilter == filters.status;
-
-      //hide elements not matching all filters
-      if (nameMatches && categoryMatches && statusMatches) {
-        product.style.display = "";
-      } else {
-        product.style.display = "none";
+if (filterInput) {
+  filterInput.addEventListener("keyup", e => {
+    const filterString = filterInput.value.toLowerCase();
+    if(e.key != "Enter"){
+      
+      cursorPos = filterInput.selectionStart
+      const lastWord = filterString.slice(0,cursorPos).split(" ").pop();
+      suggestionsContainer.innerHTML = '';
+    
+      if (lastWord.startsWith("category:")) {
+        showSuggestions(categories, lastWord.replace("category:", "").trim());
+      } else if (lastWord.startsWith("status:")) {
+        showSuggestions(statuses, lastWord.replace("status:", "").trim());
       }
-    });
+    }
+    else {
+      const filters = getFilters(filterString);
+      const products = document.getElementsByClassName("product-row");
+      Array.from(products).forEach(product => {
+        const name = product.querySelector(".product-name").innerHTML.toLowerCase();
+        const category = product.querySelector(".product-category").innerHTML.toLowerCase();
+        const active = product.getAttribute("data-status").toLowerCase();
+
+        let activeFilter = "";
+        if (active == "true") activeFilter = "active";
+        if (active == "false") activeFilter = "inactive";
+
+        // Only filter by criteria if they are specified (non-empty)
+        const nameMatches = !filters.name || name.includes(filters.name);
+        const categoryMatches = !filters.category || category.includes(filters.category);
+        const statusMatches = !filters.status || activeFilter == filters.status;
+
+        if (nameMatches && categoryMatches && statusMatches) {
+          product.style.display = "";
+        } else {
+          product.style.display = "none";
+        }
+      });
+    }
+  });
+
+  suggestionsContainer.addEventListener("click", e => {
+    if (e.target && e.target.matches("div.suggestion")) {
+      firstPart = filterInput.value.slice(0,filterInput.selectionStart)
+      lastPart = filterInput.value.slice(filterInput.selectionStart)
+      firstPart = firstPart.slice(0,firstPart.lastIndexOf(':')+1)
+      filterInput.value = firstPart + e.target.innerText + lastPart
+      suggestionsContainer.innerHTML = '';
+    }
+  });
+}
+
+function getFilters(filterString) {
+  const strings = filterString.split(" ");
+  const filters = {
+    category: "",
+    status: "",
+    name: ""
+  };
+
+  strings.forEach(string => {
+    let [type, value] = string.toLowerCase().split(":");
+    if (value != undefined) {
+      if (filters.hasOwnProperty(type)) {
+        filters[type] = value;
+      }
+    } else {
+      filters.name += type + " ";
+    }
+  });
+
+  filters.name = filters.name.trim(); // Remove trailing space
+  return filters;
+}
+
+function showSuggestions(suggestions, input) {
+  const filteredSuggestions = suggestions.filter(suggestion =>
+    suggestion.startsWith(input)
+  );
+
+  filteredSuggestions.forEach(suggestion => {
+    const suggestionElement = document.createElement("div");
+    suggestionElement.className = "suggestion";
+    suggestionElement.innerText = suggestion;
+    suggestionsContainer.appendChild(suggestionElement);
   });
 }
 

@@ -54,83 +54,148 @@ function delete_product(id) {
 const filterInput = document.getElementById("filter-products");
 const suggestionsContainer = document.getElementById("autocomplete-suggestions");
 
-// Sample categories and statuses for demonstration purposes
-const categories = ["electronics", "furniture", "clothing", "books"];
-const statuses = ["active", "inactive"];
+// console.log($.getJSON({
+//   url: '/product/category',  // URL to your Django view
+//   data: {
+//     "csrfmiddlewaretoken": csrf_token,
+//   }
+// })
+// )
+let categories = []
+fetch('/product/category', { data: { csrfmiddlewaretoken: csrf_token } })
+  .then(response => response.json())
+  .then(data => categories = data.map(cat => cat.toLowerCase()))
 
+const statuses = ["active", "inactive"];
+// fetch('/product/category_json').then(response => categories = response.json())
+
+
+let currFocus = -1;
 if (filterInput) {
-  filterInput.addEventListener("keyup", e => {
-    const filterString = filterInput.value.toLowerCase();
+  filterInput.addEventListener("input", e => {
+    // console.log(e.key);
+    const filterString = filterInput.value.toLowerCase(); 
+    suggestions = suggestionsContainer.getElementsByTagName("div")
+    cursorPos = filterInput.selectionStart
+   
     if(e.key != "Enter"){
       
-      cursorPos = filterInput.selectionStart
+      //Get last word before cursor position
       const lastWord = filterString.slice(0,cursorPos).split(" ").pop();
+      console.log(lastWord, cursorPos);
       suggestionsContainer.innerHTML = '';
-    
+      
       if (lastWord.startsWith("category:")) {
         showSuggestions(categories, lastWord.replace("category:", "").trim());
       } else if (lastWord.startsWith("status:")) {
         showSuggestions(statuses, lastWord.replace("status:", "").trim());
       }
     }
+    //On submit
     else {
-      const filters = getFilters(filterString);
-      const products = document.getElementsByClassName("product-row");
-      Array.from(products).forEach(product => {
-        const name = product.querySelector(".product-name").innerHTML.toLowerCase();
-        const category = product.querySelector(".product-category").innerHTML.toLowerCase();
-        const active = product.getAttribute("data-status").toLowerCase();
-
-        let activeFilter = "";
-        if (active == "true") activeFilter = "active";
-        if (active == "false") activeFilter = "inactive";
-
-        // Only filter by criteria if they are specified (non-empty)
-        const nameMatches = !filters.name || name.includes(filters.name);
-        const categoryMatches = !filters.category || category.includes(filters.category);
-        const statusMatches = !filters.status || activeFilter == filters.status;
-
-        if (nameMatches && categoryMatches && statusMatches) {
-          product.style.display = "";
-        } else {
-          product.style.display = "none";
-        }
-      });
+      
     }
   });
 
+  filterInput.addEventListener("keydown", e => {
+    const filterString = filterInput.value.toLowerCase();  
+    if(e.key == "ArrowDown"){
+      e.preventDefault();
+      currFocus++;
+      addActive(suggestions)
+    } else if(e.key == "ArrowUp"){
+      e.preventDefault();
+      currFocus--;
+      addActive(suggestions)
+    } else if (e.key === "Enter") {
+      if(currFocus > -1 && suggestions.length > 0){
+        suggestions[currFocus].click();
+      }
+      showFilters(filterString);
+    }
+    return false;
+  })
+
+  //Finish word when element is pressed
   suggestionsContainer.addEventListener("click", e => {
     if (e.target && e.target.matches("div.suggestion")) {
+      //Split on cursor position
       firstPart = filterInput.value.slice(0,filterInput.selectionStart)
       lastPart = filterInput.value.slice(filterInput.selectionStart)
+      //Trim to last colon and combine
       firstPart = firstPart.slice(0,firstPart.lastIndexOf(':')+1)
       filterInput.value = firstPart + e.target.innerText + lastPart
       suggestionsContainer.innerHTML = '';
+      currFocus = -1;
     }
   });
+  function addActive(suggestions) {
+    if (!suggestions || suggestions.length == 0) return false;
+    removeActive(suggestions);
+    if (currFocus >= suggestions.length) currFocus = 0;
+    if (currFocus < 0) currFocus = (suggestions.length - 1);
+    suggestions[currFocus].classList.add("suggestion-active");
+  }
+
+  function removeActive(suggestions) {
+    for (var i = 0; i < suggestions.length; i++) {
+      suggestions[i].classList.remove("suggestion-active");
+    }
+  }
 }
 
-function getFilters(filterString) {
-  const strings = filterString.split(" ");
-  const filters = {
+//Hide all elements not matching filter
+function showFilters(filterString){
+  const filters = getFilters(filterString);
+  const products = document.getElementsByClassName("product-row");
+  Array.from(products).forEach(product => {
+    //Get product properties
+    const name = product.querySelector(".product-name").innerHTML.toLowerCase();
+    const category = product.querySelector(".product-category").innerHTML.toLowerCase();
+    const active = product.getAttribute("data-status").toLowerCase();
+
+    //Convert bool to activity string
+    let activeFilter = "";
+    if (active == "true") activeFilter = "active";
+    if (active == "false") activeFilter = "inactive";
+
+    // Only filter by criteria if they are specified (non-empty)
+    const nameMatches = !filters.name || name.includes(filters.name);
+    const categoryMatches = !filters.category || category.includes(filters.category);
+    const statusMatches = !filters.status || activeFilter == filters.status;
+
+    if (nameMatches && categoryMatches && statusMatches) {
+      product.style.display = "";
+    } else {
+      product.style.display = "none";
+    }
+  })
+
+  //Turn filter string into filter object
+  function getFilters(filterString) {
+
+    const strings = filterString.split(" ");
+    const filters = {
     category: "",
     status: "",
     name: ""
-  };
+    };
 
-  strings.forEach(string => {
-    let [type, value] = string.toLowerCase().split(":");
-    if (value != undefined) {
-      if (filters.hasOwnProperty(type)) {
-        filters[type] = value;
+    //Check if filter exists then assign value in object
+    strings.forEach(string => {
+      let [type, value] = string.toLowerCase().split(":");
+      if (value != undefined) {
+        if (filters.hasOwnProperty(type)) {
+          filters[type] = value;
+        }
+      } else {
+        filters.name += type + " ";
       }
-    } else {
-      filters.name += type + " ";
-    }
-  });
+    });
 
-  filters.name = filters.name.trim(); // Remove trailing space
-  return filters;
+    filters.name = filters.name.trim(); // Remove trailing space
+    return filters;
+  }
 }
 
 function showSuggestions(suggestions, input) {
@@ -144,33 +209,6 @@ function showSuggestions(suggestions, input) {
     suggestionElement.innerText = suggestion;
     suggestionsContainer.appendChild(suggestionElement);
   });
-}
-
-function getFilters(filter_string)
-{
-  strings = filter_string.split(" ");
-  filters = {
-    "category" : "",
-    "status" : "",
-    "name" : ""
-  }
-
-  strings.forEach(string => {
-    let [type, value] = string.toLowerCase().split(":")
-    //If type is specified
-    if(value != undefined){
-      if(filters.hasOwnProperty(type)){
-        filters[type] = value
-      }
-    }
-    //Add to name search if no type is specified
-    else{
-      filters["name"] += type + " "
-    }
-  }
-  )
-  filters.name = filters.name.trim(); // Remove trailing space
-  return filters   //Return dictionary of filters
 }
 
 const params = new URLSearchParams(window.location.search);

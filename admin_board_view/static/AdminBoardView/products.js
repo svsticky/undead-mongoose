@@ -54,21 +54,13 @@ function delete_product(id) {
 const filterInput = document.getElementById("filter-products");
 const suggestionsContainer = document.getElementById("autocomplete-suggestions");
 
-// console.log($.getJSON({
-//   url: '/product/category',  // URL to your Django view
-//   data: {
-//     "csrfmiddlewaretoken": csrf_token,
-//   }
-// })
-// )
+//Define suggestions
 let categories = []
 fetch('/product/category', { data: { csrfmiddlewaretoken: csrf_token } })
   .then(response => response.json())
   .then(data => categories = data.map(cat => cat.toLowerCase()))
 
 const statuses = ["active", "inactive"];
-// fetch('/product/category_json').then(response => categories = response.json())
-
 
 let currFocus = -1;
 if (filterInput) {
@@ -77,9 +69,9 @@ if (filterInput) {
     const filterString = filterInput.value.toLowerCase(); 
     suggestions = suggestionsContainer.getElementsByTagName("div")
     cursorPos = filterInput.selectionStart
-   
+    
+    //Change suggestions based on input keys
     if(e.key != "Enter"){
-      
       //Get last word before cursor position
       const lastWord = filterString.slice(0,cursorPos).split(" ").pop();
       console.log(lastWord, cursorPos);
@@ -91,12 +83,9 @@ if (filterInput) {
         showSuggestions(statuses, lastWord.replace("status:", "").trim());
       }
     }
-    //On submit
-    else {
-      
-    }
   });
 
+  //Adjust autocomplete focus and submit
   filterInput.addEventListener("keydown", e => {
     const filterString = filterInput.value.toLowerCase();  
     if(e.key == "ArrowDown"){
@@ -116,7 +105,7 @@ if (filterInput) {
     return false;
   })
 
-  //Finish word when element is pressed
+  //Finish word when suggestion is pressed
   suggestionsContainer.addEventListener("click", e => {
     if (e.target && e.target.matches("div.suggestion")) {
       //Split on cursor position
@@ -149,6 +138,7 @@ function showFilters(filterString){
   const filters = getFilters(filterString);
   const products = document.getElementsByClassName("product-row");
   Array.from(products).forEach(product => {
+    
     //Get product properties
     const name = product.querySelector(".product-name").innerHTML.toLowerCase();
     const category = product.querySelector(".product-category").innerHTML.toLowerCase();
@@ -192,8 +182,8 @@ function showFilters(filterString){
         filters.name += type + " ";
       }
     });
-
-    filters.name = filters.name.trim(); // Remove trailing space
+     // Remove trailing space
+    filters.name = filters.name.trim();
     return filters;
   }
 }

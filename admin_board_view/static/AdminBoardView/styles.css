@@ -47,6 +47,29 @@ a {
   text-decoration: none;
 }
 
+.autocomplete-suggestions {
+  border: 1px solid #ccc;
+  max-height: 150px;
+  overflow-y: auto;
+  position: absolute;
+  background-color: white;
+  z-index: 1000;
+  width: calc(100% - 2px);
+}
+
+.suggestion {
+  padding: 1%;
+  cursor: pointer;
+}
+
+.suggestion:hover {
+  background-color: #e0e0e0;
+}
+.suggestion-active {
+  /*when navigating through the items using the arrow keys:*/
+  background-color: DodgerBlue !important;
+  color: #ffffff;
+}
 
 .pagination {
   width: fit-content;
@@ -65,3 +88,4 @@ a {
   /* Margin to make sure it's properly aligned: (50-16)/2 */
   margin: 17px;
 }
+

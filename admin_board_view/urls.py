@@ -14,6 +14,7 @@ urlpatterns = [
 
     path('product/toggle', views.toggle, name='toggle'),
     path('product/delete', views.delete, name='delete'),
+    path('product/category', views.categories_json, name='category_json'),
 
     path('category/edit', views.category, name='category'),
     path('vat/edit', views.vat, name='vat'),

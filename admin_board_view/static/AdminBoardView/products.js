@@ -145,9 +145,7 @@ function showFilters(filterString){
     const active = product.getAttribute("data-status").toLowerCase();
 
     //Convert bool to activity string
-    let activeFilter = "";
-    if (active == "true") activeFilter = "active";
-    if (active == "false") activeFilter = "inactive";
+    const activeFilter = active === "true" ? "active" : "inactive";
 
     // Only filter by criteria if they are specified (non-empty)
     const nameMatches = !filters.name || name.includes(filters.name);

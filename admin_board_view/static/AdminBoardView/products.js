@@ -152,11 +152,9 @@ function showFilters(filterString){
     const categoryMatches = !filters.category || category.includes(filters.category);
     const statusMatches = !filters.status || activeFilter == filters.status;
 
-    if (nameMatches && categoryMatches && statusMatches) {
-      product.style.display = "";
-    } else {
-      product.style.display = "none";
-    }
+    product.style.display = nameMatches && categoryMatches && statusMatches
+      ? ""
+      : "none";
   })
 
   //Turn filter string into filter object

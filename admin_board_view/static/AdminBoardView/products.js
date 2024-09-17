@@ -74,7 +74,6 @@ if (filterInput) {
     if(e.key != "Enter"){
       //Get last word before cursor position
       const lastWord = filterString.slice(0,cursorPos).split(" ").pop();
-      console.log(lastWord, cursorPos);
       suggestionsContainer.innerHTML = '';
       
       if (lastWord.startsWith("category:")) {
@@ -91,11 +90,11 @@ if (filterInput) {
     if(e.key == "ArrowDown"){
       e.preventDefault();
       currFocus++;
-      addActive(suggestions)
+      highlightFocussed(suggestions)
     } else if(e.key == "ArrowUp"){
       e.preventDefault();
       currFocus--;
-      addActive(suggestions)
+      highlightFocussed(suggestions)
     } else if (e.key === "Enter") {
       if(currFocus > -1 && suggestions.length > 0){
         suggestions[currFocus].click();
@@ -118,15 +117,18 @@ if (filterInput) {
       currFocus = -1;
     }
   });
-  function addActive(suggestions) {
+  //Add highlight to the active suggestion
+  function highlightFocussed(suggestions) {
     if (!suggestions || suggestions.length == 0) return false;
-    removeActive(suggestions);
+
+    //Clear all highlights and highlight the focussed
+    removeAllHighlights(suggestions);
     if (currFocus >= suggestions.length) currFocus = 0;
     if (currFocus < 0) currFocus = (suggestions.length - 1);
     suggestions[currFocus].classList.add("suggestion-active");
   }
 
-  function removeActive(suggestions) {
+  function removeAllHighlights(suggestions) {
     for (var i = 0; i < suggestions.length; i++) {
       suggestions[i].classList.remove("suggestion-active");
     }
@@ -135,7 +137,7 @@ if (filterInput) {
 
 //Hide all elements not matching filter
 function showFilters(filterString){
-  const filters = getFilters(filterString);
+  const [searchTerm, filters] = getFilters(filterString);
   const products = document.getElementsByClassName("product-row");
   Array.from(products).forEach(product => {
     
@@ -148,7 +150,7 @@ function showFilters(filterString){
     const activeFilter = active === "true" ? "active" : "inactive";
 
     // Only filter by criteria if they are specified (non-empty)
-    const nameMatches = !filters.name || name.includes(filters.name);
+    const nameMatches = name.includes(searchTerm);
     const categoryMatches = !filters.category || category.includes(filters.category);
     const statusMatches = !filters.status || activeFilter == filters.status;
 
@@ -159,32 +161,27 @@ function showFilters(filterString){
 
   //Turn filter string into filter object
   function getFilters(filterString) {
-
+    const filterNames = ["category", "status"]
     const strings = filterString.split(" ");
-    const filters = {
-    category: "",
-    status: "",
-    name: ""
-    };
+    const filters = {};
+    const searchTerm = [];
 
     //Check if filter exists then assign value in object
     strings.forEach(string => {
-      let [type, value] = string.toLowerCase().split(":");
-      if (value != undefined) {
-        if (filters.hasOwnProperty(type)) {
+      const [type, value] = string.toLowerCase().split(":");
+      if (value && filterNames.includes(type)) {
           filters[type] = value;
-        }
       } else {
-        filters.name += type + " ";
+        searchTerm.push(string);
       }
     });
-     // Remove trailing space
-    filters.name = filters.name.trim();
-    return filters;
+    return [searchTerm.join(" ").trim(), filters];
   }
 }
 
+//Add divs for each suggestion to the suggestionContainer
 function showSuggestions(suggestions, input) {
+  //Get list of suggestions that match input so far
   const filteredSuggestions = suggestions.filter(suggestion =>
     suggestion.startsWith(input)
   );

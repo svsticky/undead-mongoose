@@ -51,19 +51,146 @@ function delete_product(id) {
 }
 
 // Filter products
-const filter_input = document.getElementById("filter-products");
-if (filter_input) {
-  filter_input.addEventListener("keyup", e => {
-    const filter = filter_input.value.toLowerCase();
-    const products = document.getElementsByClassName("product-row");
-    Array.from(products).forEach(product => {
-      const name = product.querySelector(".product-name").innerHTML.toLowerCase();
-      if (name.includes(filter)) {
-        product.style.display = "";
+const filterInput = document.getElementById("filter-products");
+const suggestionsContainer = document.getElementById("autocomplete-suggestions");
+
+//Define suggestions
+let categories = []
+fetch('/product/category', { data: { csrfmiddlewaretoken: csrf_token } })
+  .then(response => response.json())
+  .then(data => categories = data.map(cat => cat.toLowerCase()))
+
+const statuses = ["active", "inactive"];
+
+let currFocus = -1;
+if (filterInput) {
+  filterInput.addEventListener("input", e => {
+    // console.log(e.key);
+    const filterString = filterInput.value.toLowerCase(); 
+    suggestions = suggestionsContainer.getElementsByTagName("div")
+    cursorPos = filterInput.selectionStart
+    
+    //Change suggestions based on input keys
+    if(e.key != "Enter"){
+      //Get last word before cursor position
+      const lastWord = filterString.slice(0,cursorPos).split(" ").pop();
+      suggestionsContainer.innerHTML = '';
+      
+      if (lastWord.startsWith("category:")) {
+        showSuggestions(categories, lastWord.replace("category:", "").trim());
+      } else if (lastWord.startsWith("status:")) {
+        showSuggestions(statuses, lastWord.replace("status:", "").trim());
+      }
+    }
+  });
+
+  //Adjust autocomplete focus and submit
+  filterInput.addEventListener("keydown", e => {
+    const filterString = filterInput.value.toLowerCase();  
+    if(e.key == "ArrowDown"){
+      e.preventDefault();
+      currFocus++;
+      highlightFocussed(suggestions)
+    } else if(e.key == "ArrowUp"){
+      e.preventDefault();
+      currFocus--;
+      highlightFocussed(suggestions)
+    } else if (e.key === "Enter") {
+      if(currFocus > -1 && suggestions.length > 0){
+        suggestions[currFocus].click();
+      }
+      showFilters(filterString);
+    }
+    return false;
+  })
+
+  //Finish word when suggestion is pressed
+  suggestionsContainer.addEventListener("click", e => {
+    if (e.target && e.target.matches("div.suggestion")) {
+      //Split on cursor position
+      firstPart = filterInput.value.slice(0,filterInput.selectionStart)
+      lastPart = filterInput.value.slice(filterInput.selectionStart)
+      //Trim to last colon and combine
+      firstPart = firstPart.slice(0,firstPart.lastIndexOf(':')+1)
+      filterInput.value = firstPart + e.target.innerText + lastPart
+      suggestionsContainer.innerHTML = '';
+      currFocus = -1;
+    }
+  });
+  //Add highlight to the active suggestion
+  function highlightFocussed(suggestions) {
+    if (!suggestions || suggestions.length == 0) return false;
+
+    //Clear all highlights and highlight the focussed
+    removeAllHighlights(suggestions);
+    if (currFocus >= suggestions.length) currFocus = 0;
+    if (currFocus < 0) currFocus = (suggestions.length - 1);
+    suggestions[currFocus].classList.add("suggestion-active");
+  }
+
+  function removeAllHighlights(suggestions) {
+    for (var i = 0; i < suggestions.length; i++) {
+      suggestions[i].classList.remove("suggestion-active");
+    }
+  }
+}
+
+//Hide all elements not matching filter
+function showFilters(filterString){
+  const [searchTerm, filters] = getFilters(filterString);
+  const products = document.getElementsByClassName("product-row");
+  Array.from(products).forEach(product => {
+    
+    //Get product properties
+    const name = product.querySelector(".product-name").innerHTML.toLowerCase();
+    const category = product.querySelector(".product-category").innerHTML.toLowerCase();
+    const active = product.getAttribute("data-status").toLowerCase();
+
+    //Convert bool to activity string
+    const activeFilter = active === "true" ? "active" : "inactive";
+
+    // Only filter by criteria if they are specified (non-empty)
+    const nameMatches = name.includes(searchTerm);
+    const categoryMatches = !filters.category || category.includes(filters.category);
+    const statusMatches = !filters.status || activeFilter == filters.status;
+
+    product.style.display = nameMatches && categoryMatches && statusMatches
+      ? ""
+      : "none";
+  })
+
+  //Turn filter string into filter object
+  function getFilters(filterString) {
+    const filterNames = ["category", "status"]
+    const strings = filterString.split(" ");
+    const filters = {};
+    const searchTerm = [];
+
+    //Check if filter exists then assign value in object
+    strings.forEach(string => {
+      const [type, value] = string.toLowerCase().split(":");
+      if (value && filterNames.includes(type)) {
+          filters[type] = value;
       } else {
-        product.style.display = "none";
+        searchTerm.push(string);
       }
     });
+    return [searchTerm.join(" ").trim(), filters];
+  }
+}
+
+//Add divs for each suggestion to the suggestionContainer
+function showSuggestions(suggestions, input) {
+  //Get list of suggestions that match input so far
+  const filteredSuggestions = suggestions.filter(suggestion =>
+    suggestion.startsWith(input)
+  );
+
+  filteredSuggestions.forEach(suggestion => {
+    const suggestionElement = document.createElement("div");
+    suggestionElement.className = "suggestion";
+    suggestionElement.innerText = suggestion;
+    suggestionsContainer.appendChild(suggestionElement);
   });
 }
 

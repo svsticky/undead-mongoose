@@ -9,7 +9,8 @@
     </section> 
   </div>
   <div class="card-body overflow-x-auto">
-    <input id="filter-products" class="form-control" type="text" placeholder="Type product..." />
+    <input id="filter-products" class="form-control" type="text" placeholder="Type product name or category:category_name or status:active/inactive" />
+    <div id="autocomplete-suggestions" class="autocomplete-suggestions"></div>
     <hr/>
     <table class="table table-striped table-hover text-center align-middle">
       <thead>
@@ -23,11 +24,11 @@
       </thead>
       <tbody>
         {% for product in products %}
-          <tr id="{{ product.id }}" class="product-row">
+          <tr id="{{ product.id }}" data-status="{{ product.enabled }}" class="product-row">
             <td class="product-image {% if not product.enabled %}disabled-product{% endif %}">{{ product.image_view }}</td>
             <td class="product-name">{{ product.name }}</td>
             <td>{{ product.euro }}</td>
-            <td>{{ product.category }}</td>
+            <td class="product-category">{{ product.category }}</td>
             <td>
               <div class="mb-1">
                 <a href="/products?edit={{ product.id }}"><button class="btn btn-primary edit-product">Edit</button></a>

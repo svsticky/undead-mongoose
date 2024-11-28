@@ -70,6 +70,10 @@ def products(request):
     categories = Category.objects.all()
     return render(request, "products.html", { "products": products, "categories": categories, "product_form": pf, "current_product": product, "product_sales": product_sales })
 
+@dashboard_admin
+def categories_json(request):
+    categories = list(Category.objects.values_list('name', flat=True))
+    return JsonResponse(categories, safe=False)
 
 @dashboard_admin
 def delete(request):

@@ -333,3 +333,6 @@ def send_confirmation(email, card):
                 """
         }
     )
+
+def topup(request):
+    return HttpResponse(status=200)

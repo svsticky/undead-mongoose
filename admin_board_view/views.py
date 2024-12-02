@@ -10,7 +10,9 @@ from itertools import groupby
 from admin_board_view.middleware import dashboard_authenticated, dashboard_admin
 from admin_board_view.utils import create_paginator
 from .models import *
-
+from mollie.api.client import Client
+from django.conf import settings
+from .forms import create_TopUpForm
 
 @dashboard_authenticated
 def index(request):
@@ -19,6 +21,7 @@ def index(request):
         total_balance = sum(user.balance for user in User.objects.all())
         return render(request, "home.html", {"users": User.objects.all(), "product_amount": product_amount, "total_balance": total_balance, "top_types": top_up_types })
     else:
+        print(request.user.email)
         user = User.objects.get(email=request.user.email)
 
         # Get product sales
@@ -28,10 +31,14 @@ def index(request):
             product_sale_groups.append({ "key": designation, "values": list(member_group) })
         sales_page = create_paginator(product_sale_groups, request.GET.get('sales'))
 
+        mollie_client = Client()
+        mollie_client.set_api_key(settings.MOLLIE_API_KEY)
+        form = create_TopUpForm(mollie_client)
+
         # Get topup page
         top_ups = TopUpTransaction.objects.all().filter(user_id=user)
         top_up_page = create_paginator(top_ups, request.GET.get('top_ups'))
-        return render(request, "user_home.html", {"user_info": user, "top_ups": top_up_page, "sales": sales_page })
+        return render(request, "user_home.html", {"user_info": user, "top_ups": top_up_page, "sales": sales_page, "form": form })
 
 
 def login(request):

@@ -16,7 +16,6 @@ from datetime import time
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-print(BASE_DIR)
 
 
 # Quick-start development settings - unsuitable for production
@@ -174,3 +173,5 @@ LOGOUT_REDIRECT_URL = "/"
 OIDC_RP_SCOPES = "openid profile email member-read"
 OIDC_RP_SIGN_ALGO = "RS256"
 OIDC_OP_JWKS_ENDPOINT=os.environ['OIDC_OP_JWKS_ENDPOINT']
+
+MOLLIE_API_KEY = os.getenv("MOLLIE_API_KEY")

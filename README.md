@@ -15,6 +15,7 @@ cd undead-mongoose
 
 # Create virtual environment (platform-specific)
 # On linux
+pyenv sync # Installs the correct python version, if you haven't done so already
 pyenv exec python -m venv .venv
 source .venv/bin/activate
 

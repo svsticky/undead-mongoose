@@ -16,5 +16,7 @@ urlpatterns = [
     path('register', views.register_card, name='register_card'),
     path('catchwebhook', views.on_webhook, name='receive_update'),
 
-    path('topup', views.topup, name='topup')
+    path('topup', views.topup, name='topup'),
+    path('payment/webhook', views.payment_webhook, name='payment_webhook'),
+    path('payment/success', views.payment_success, name='payment_success')
 ]

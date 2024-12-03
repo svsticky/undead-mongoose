@@ -1,11 +1,13 @@
 import json
 from django.http.response import HttpResponse
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
 from decimal import Decimal
 from django.conf import settings
+
+from admin_board_view.forms import create_TopUpForm
 from .middleware import authenticated
 from .models import CardConfirmation, Category, Card, Product, ProductTransactions, SaleTransaction, TopUpTransaction, User, Configuration
 from datetime import datetime, date
@@ -14,6 +16,7 @@ import requests
 import threading
 from constance import config
 from django.utils import timezone
+from mollie.api.client import Client
 
 import secrets
 
@@ -334,5 +337,51 @@ def send_confirmation(email, card):
         }
     )
 
+@require_http_methods(["POST"])
 def topup(request):
+    mollie_client = Client()
+    mollie_client.set_api_key(settings.MOLLIE_API_KEY)
+    form = create_TopUpForm(mollie_client)
+    
+    bound_form = form(request.POST)
+    
+    webhook_url = request.build_absolute_uri('/api/payment/webhook')
+    redirect_url = request.build_absolute_uri('/api/payment/success')
+
+    if bound_form.is_valid():
+        payment = mollie_client.payments.create({
+            'amount': {
+                'currency': 'EUR',
+                'value': f'{bound_form.cleaned_data["amount"]:.2f}'
+            },
+            'description': 'Top up mongoose balance',
+            'redirectUrl': redirect_url,
+            'webhookUrl': webhook_url,
+            'method': 'ideal',
+            'issuer': bound_form.cleaned_data['issuer']
+        })
+        return redirect(payment.checkout_url)
+    else:
+        return HttpResponse(status=400)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def payment_webhook(request):
+    mollie_client = Client()
+    mollie_client.set_api_key(settings.MOLLIE_API_KEY)
+    payment = mollie_client.payments.get(request.POST['id'])
+    
+    if payment.is_paid():
+        print("Payment paid!")
+    elif payment.is_pending():
+        print("Payment started but not completed!")
+    elif payment.is_open():
+        print("Payment not started yet!")
+    else:
+        print("Payment cancelled!")
+    
+    return HttpResponse(status=200)
+
+@require_http_methods(["GET"])
+def payment_success(request):
     return HttpResponse(status=200)

@@ -8,8 +8,9 @@ from decimal import Decimal
 from django.conf import settings
 
 from admin_board_view.forms import create_TopUpForm
+from admin_board_view.middleware import dashboard_authenticated
 from .middleware import authenticated
-from .models import CardConfirmation, Category, Card, Product, ProductTransactions, SaleTransaction, TopUpTransaction, User, Configuration
+from .models import CardConfirmation, Category, Card, IDealTransaction, PaymentStatus, Product, ProductTransactions, SaleTransaction, TopUpTransaction, User, Configuration
 from datetime import datetime, date
 from django.views.decorators.csrf import csrf_exempt
 import requests
@@ -337,6 +338,7 @@ def send_confirmation(email, card):
         }
     )
 
+@dashboard_authenticated
 @require_http_methods(["POST"])
 def topup(request):
     mollie_client = Client()
@@ -345,10 +347,16 @@ def topup(request):
     
     bound_form = form(request.POST)
     
-    webhook_url = request.build_absolute_uri('/api/payment/webhook')
-    redirect_url = request.build_absolute_uri('/api/payment/success')
-
     if bound_form.is_valid():
+        user = User.objects.get(email=request.user)
+        transaction = IDealTransaction.objects.create(
+            user_id=user,
+            transaction_sum=bound_form.cleaned_data["amount"]
+        )
+
+        webhook_url = request.build_absolute_uri(f'/api/payment/webhook?transaction_id={transaction.transaction_id}')
+        redirect_url = request.build_absolute_uri(f'/?transaction_id={transaction.transaction_id}')
+
         payment = mollie_client.payments.create({
             'amount': {
                 'currency': 'EUR',
@@ -370,15 +378,20 @@ def payment_webhook(request):
     mollie_client = Client()
     mollie_client.set_api_key(settings.MOLLIE_API_KEY)
     payment = mollie_client.payments.get(request.POST['id'])
+
+    transaction_id = request.GET["transaction_id"]
+    transaction = IDealTransaction.objects.get(transaction_id=transaction_id)
     
     if payment.is_paid():
-        print("Payment paid!")
+        transaction.status = PaymentStatus.PAID
     elif payment.is_pending():
-        print("Payment started but not completed!")
+        transaction.status = PaymentStatus.PENDING
     elif payment.is_open():
-        print("Payment not started yet!")
+        transaction.status = PaymentStatus.OPEN
     else:
-        print("Payment cancelled!")
+        transaction.status = PaymentStatus.CANCELLED
+
+    transaction.save()
     
     return HttpResponse(status=200)
 

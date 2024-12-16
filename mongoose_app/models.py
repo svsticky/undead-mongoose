@@ -1,4 +1,5 @@
 from typing import Any, Dict, Iterable, Optional, Tuple
+import uuid
 from django.db import models
 from django.utils.html import mark_safe
 from django.conf import settings
@@ -171,6 +172,31 @@ class TopUpTransaction(Transaction):
         self.user_id.save()
         return super().delete(using=using, keep_parents=keep_parents)
 
+class PaymentStatus(models.IntegerChoices):
+    PAID = 1, "PAID"
+    PENDING = 2, "PENDING"
+    OPEN = 3, "OPEN"
+    CANCELLED = 4, "CANCELLED"
+
+class IDealTransaction(Transaction):
+    transaction_id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    status = models.IntegerField(choices=PaymentStatus.choices, default=PaymentStatus.OPEN)
+    added = models.BooleanField(default=False)
+
+    def save(self, force_insert: bool = False, force_update: bool = False, using: Optional[str] = None, update_fields: Optional[Iterable[str]] = None) -> None:
+        if not self.added and self.status == PaymentStatus.PAID:
+            self.user_id.balance += self.transaction_sum
+            self.user_id.save()
+            self.added = True
+        return super().save(force_insert=force_insert, force_update=force_update, using=using, update_fields=update_fields)
+
+    def delete(self, using: Any = None, keep_parents: bool = False) -> Tuple[int, Dict[str, int]]:
+        self.user_id.balance -= self.transaction_sum
+        self.user_id.save()
+        return super().delete(using=using, keep_parents=keep_parents)
+
+    def __str__(self):
+        return "iDeal transaction { status = " + str(PaymentStatus(self.status).label) + ", added = " + str(self.added) + ", id = " + str(self.id) + " }"
 
 # User needs name, age and balance to be able to make sense to BESTUUUUUR.
 class User(models.Model):

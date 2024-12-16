@@ -21,7 +21,6 @@ def index(request):
         total_balance = sum(user.balance for user in User.objects.all())
         return render(request, "home.html", {"users": User.objects.all(), "product_amount": product_amount, "total_balance": total_balance, "top_types": top_up_types })
     else:
-        print(request.user.email)
         user = User.objects.get(email=request.user.email)
 
         # Get product sales
@@ -35,10 +34,19 @@ def index(request):
         mollie_client.set_api_key(settings.MOLLIE_API_KEY)
         form = create_TopUpForm(mollie_client)
 
+        transaction_id = request.GET.dict().get("transaction_id")
+        transaction = IDealTransaction.objects.get(transaction_id=transaction_id) if transaction_id else None
+
         # Get topup page
-        top_ups = TopUpTransaction.objects.all().filter(user_id=user)
-        top_up_page = create_paginator(top_ups, request.GET.get('top_ups'))
-        return render(request, "user_home.html", {"user_info": user, "top_ups": top_up_page, "sales": sales_page, "form": form })
+        top_ups = TopUpTransaction.objects.all().filter(user_id=user).values_list("date", "transaction_sum")
+        ideal_transactions = IDealTransaction.objects.all().filter(user_id=user, status=PaymentStatus.PAID).values_list("date", "transaction_sum")
+        all_top_ups = sorted(
+            [(d, t, "Pin") for d, t in top_ups] +
+            [(d, t, "iDeal") for d, t in ideal_transactions],
+            key=lambda transaction: transaction[0]
+        )
+        top_up_page = create_paginator(all_top_ups, request.GET.get('top_ups'))
+        return render(request, "user_home.html", {"user_info": user, "top_ups": top_up_page, "sales": sales_page, "form": form, "transaction": transaction, "PaymentStatus": PaymentStatus })
 
 
 def login(request):

@@ -2,6 +2,21 @@
 {% load static %}
 {% block body %}
 <main class="container mt-3">
+  {% if transaction %}
+    {% if transaction.status == PaymentStatus.PAID %}
+      <div class="alert alert-success">
+        The transaction was successful and your balance is updated!
+      </div>
+    {% elif transaction.status == PaymentStatus.CANCELLED %}
+      <div class="alert alert-danger">
+        The transaction failed! If you believe this is a mistake, please contact the board.
+      </div>
+    {% else %}
+      <div class="alert alert-info">
+        We are processing your payment. Once it succeed, your balance will be updated!
+      </div>
+    {% endif %}
+  {% endif %}
   <h1>Welcome {{ user_info.name }}</h1>
   <h5 class="mb-2">
     Current balance: <b>{{ user_info.euro_balance }}</b>
@@ -51,11 +66,11 @@
               </tr>
             </thead>
             <tbody>
-              {% for top_up in top_ups.object_list %}
+              {% for date, price, type in top_ups %}
               <tr>
-                <td>{{ top_up.date }}</td>
-                <td>€{{ top_up.transaction_sum }}</td>
-                <td>{% if top_up.type == 1 %}Pin{% elif top_up.type == 2 %}Credit card{% elif top_up.type == 3 %}Mollie{% endif %}</td>
+                <td>{{ date }}</td>
+                <td>€{{ price }}</td>
+                <td>{{ type }}</td>
               </tr>
             {% endfor %}
             </tbody>

@@ -46,9 +46,6 @@ def index(request):
             )
         sales_page = create_paginator(product_sale_groups, request.GET.get("sales"))
 
-        mollie_client = Client()
-        mollie_client.set_api_key(settings.MOLLIE_API_KEY)
-
         transaction_id = request.GET.dict().get("transaction_id")
         transaction = (
             IDealTransaction.objects.get(transaction_id=transaction_id)

@@ -12,7 +12,7 @@ from admin_board_view.utils import create_paginator
 from .models import *
 from mollie.api.client import Client
 from django.conf import settings
-from .forms import create_TopUpForm
+from .forms import TopUpForm
 
 
 @dashboard_authenticated
@@ -48,7 +48,6 @@ def index(request):
 
         mollie_client = Client()
         mollie_client.set_api_key(settings.MOLLIE_API_KEY)
-        form = create_TopUpForm(mollie_client)
 
         transaction_id = request.GET.dict().get("transaction_id")
         transaction = (
@@ -81,7 +80,7 @@ def index(request):
                 "user_info": user,
                 "top_ups": top_up_page,
                 "sales": sales_page,
-                "form": form,
+                "form": TopUpForm,
                 "transaction": transaction,
                 "PaymentStatus": PaymentStatus,
             },

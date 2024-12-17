@@ -7,7 +7,7 @@ from django.views.decorators.http import require_http_methods
 from decimal import Decimal
 from django.conf import settings
 
-from admin_board_view.forms import create_TopUpForm
+from admin_board_view.forms import TopUpForm
 from admin_board_view.middleware import dashboard_authenticated
 from .middleware import authenticated
 from .models import (
@@ -338,9 +338,7 @@ def send_confirmation(email, card):
 def topup(request):
     mollie_client = Client()
     mollie_client.set_api_key(settings.MOLLIE_API_KEY)
-    form = create_TopUpForm(mollie_client)
-
-    bound_form = form(request.POST)
+    bound_form = TopUpForm(request.POST)
 
     if bound_form.is_valid():
         user = User.objects.get(email=request.user)
@@ -365,7 +363,6 @@ def topup(request):
                 "redirectUrl": redirect_url,
                 "webhookUrl": webhook_url,
                 "method": "ideal",
-                "issuer": bound_form.cleaned_data["issuer"],
             }
         )
         return redirect(payment.checkout_url)
@@ -395,9 +392,3 @@ def payment_webhook(request):
     transaction.save()
 
     return HttpResponse(status=200)
-
-
-@require_http_methods(["GET"])
-def payment_success(request):
-    return HttpResponse(status=200)
-

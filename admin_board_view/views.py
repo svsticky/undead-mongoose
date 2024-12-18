@@ -343,71 +343,58 @@ def export_sale_transactions(request):
         export_type = req_get.get("type")
         start_date = req_get.get("start_date")
         end_date = req_get.get("end_date")
+        response_type = req_get.get("response_type")
+
+        # Get the date range from the request
+        current_date = timezone.now().strftime("%Y-%m-%d")
+
+        # Select the relevant data
         if export_type == "mollie":
+            # Require both start and end date
             if not start_date or not end_date:
                 return HttpResponse("No date range given.", status=400)
 
-            # Get the date range from the request
-            current_date = timezone.now().strftime("%Y-%m-%d")
-
-            # Get the transactions in the date range
-            top_up_range = TopUpTransaction.objects.filter(
-                date__range=[start_date, end_date], type=3
-            ).all()
-            ideal_transactions = IDealTransaction.objects.filter(
+            data = IDealTransaction.objects.filter(
                 date__range=[start_date, end_date]
             ).all()
-
-            # Setup the export "csv"
-            response_string = f"Factuurdatum,{current_date},ideal - {start_date} / {end_date},02,473\n"
-
-            # Add the transactions to the export "csv"
-            for t in top_up_range:
-                response_string += (
-                    f'"",8002,Mongoose - {t.id},9,{t.transaction_sum},""\n'
-                )
-
-            for t in ideal_transactions:
-                response_string += (
-                    f'"",8002,Mongoose - {t.transaction_id},9,{t.transaction_sum},""\n'
-                )
-
-            # Return the export "csv"
-            return HttpResponse(response_string, content_type="text/csv")
         elif export_type == "pin":
-            if not start_date or not end_date:
-                return HttpResponse("No date range given.", status=400)
-
-            # Get the date range from the request
-            current_date = timezone.now().strftime("%Y-%m-%d")
-
-            # Get the transactions in the date range
+            # Require either dates or just one
             if start_date and end_date:
-                top_up_range = TopUpTransaction.objects.filter(
+                data = TopUpTransaction.objects.filter(
                     date__range=[start_date, end_date], type=1
                 ).all()
             else:
-                top_up_range = TopUpTransaction.objects.filter(
-                    date=current_date, type=1
-                ).all()
+                data = TopUpTransaction.objects.filter(date=current_date, type=1).all()
+        else:
+            return HttpResponse(f"Invalid export type {export_type}", status=400)
 
-            # Turn transaction result into JSON
+        # Create the response in the requested format
+        if response_type == "csv":
+            response_string = f"Factuurdatum,{current_date},{export_type} - {start_date} / {end_date},02,473\n"
+
+            # Add the transactions to the export "csv"
+            for t in data:
+                name = "pin betaling" if export_type == "pin" else t.transaction_id
+                response_string += f'"",8002,Mongoose - {name},9,{"{:.2f}".format(t.transaction_sum)},""\n'
+
+            # Return the export "csv"
+            return HttpResponse(response_string, content_type="text/csv")
+        elif response_type == "json":
             json_resp = json.dumps(
                 [
                     {
                         "member_id": t.user_id.id,
                         "name": t.user_id.name,
-                        "price": float(t.transaction_sum),
+                        "price": "{:.2f}".format(t.transaction_sum),
                         "date": t.date.strftime("%Y-%m-%d"),
                     }
-                    for t in top_up_range
+                    for t in data
                 ]
             )
 
-            # Return the created json
             return HttpResponse(json_resp, content_type="application/json")
         else:
-            return HttpResponse("Export type not found", status=400)
+            return HttpResponse(f"Invalid response type {response_type}", status=400)
     except Exception as e:
         print(e)
         return HttpResponse(

@@ -62,7 +62,7 @@ def index(request):
         )
         ideal_transactions = (
             IDealTransaction.objects.all()
-            .filter(user_id=user, status=PaymentStatus.PAID)
+            .filter(user_id=user, added=True)
             .values_list("date", "transaction_sum")
         )
         all_top_ups = sorted(
@@ -157,7 +157,6 @@ def users(request, user_id=None):
     user, cards = None, None
     if user_id:
         user = User.objects.get(id=user_id)
-        top_ups = TopUpTransaction.objects.all().filter(user_id=user)
         product_sales = list(
             ProductTransactions.objects.all().filter(transaction_id__user_id=user)
         )
@@ -175,7 +174,22 @@ def users(request, user_id=None):
             if card.active is False:
                 cards[i]["token"] = CardConfirmation.objects.get(card=card).token
 
-        top_up_page = create_paginator(top_ups, request.GET.get("top_ups"))
+        top_ups = (
+            TopUpTransaction.objects.all()
+            .filter(user_id=user)
+            .values_list("date", "transaction_sum")
+        )
+        ideal_transactions = (
+            IDealTransaction.objects.all()
+            .filter(user_id=user, added=True)
+            .values_list("date", "transaction_sum")
+        )
+        all_top_ups = sorted(
+            [(d, t, "Pin") for d, t in top_ups]
+            + [(d, t, "iDeal") for d, t in ideal_transactions],
+            key=lambda transaction: transaction[0],
+        )
+        top_up_page = create_paginator(all_top_ups, request.GET.get("top_ups"))
         sales_page = create_paginator(product_sale_groups, request.GET.get("sales"))
 
         return render(

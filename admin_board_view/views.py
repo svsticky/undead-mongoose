@@ -5,6 +5,7 @@ from django.http.response import JsonResponse
 from django.shortcuts import render, HttpResponseRedirect
 from django.http import HttpResponse
 from django.utils import timezone
+from datetime import timedelta
 from itertools import groupby
 
 from admin_board_view.middleware import dashboard_authenticated, dashboard_admin
@@ -309,9 +310,20 @@ def transactions(request):
     sales_page = create_paginator(
         product_sale_groups, request.GET.get("sales"), p_len=10
     )
+    ideal_page = create_paginator(
+        IDealTransaction.objects.filter(added=True), request.GET.get("ideal"), p_len=10
+    )
 
     return render(
-        request, "transactions.html", {"top_ups": top_up_page, "sales": sales_page}
+        request,
+        "transactions.html",
+        {
+            "top_ups": top_up_page,
+            "sales": sales_page,
+            "ideal": ideal_page,
+            "last_week": timezone.now() - timedelta(weeks=1),
+            "this_week": timezone.now(),
+        },
     )
 
 

@@ -3,7 +3,7 @@ const addCategory = document.getElementById("add-category");
 if (addCategory) {
   addCategory.addEventListener("click", e => {
     const table = document.getElementById("categories");
-    let template = document.getElementById("template-category-item").cloneNode(deep=true);
+    let template = document.getElementById("template-category-item").cloneNode(deep = true);
     template.classList = "category-item";
     template.id = 0;
     table.appendChild(template)
@@ -15,7 +15,7 @@ const updateCategories = document.getElementById("update-categories");
 if (updateCategories) {
   updateCategories.addEventListener("click", e => {
     let items = [];
-    
+
     const categoryItems = Array.from(document.getElementsByClassName("category-item"));
     categoryItems.forEach(category => {
       let name = category.querySelector(".form-control").value.trim();
@@ -60,7 +60,7 @@ function delete_category(id) {
     url: `/category/edit`,
     data: {
       "csrfmiddlewaretoken": csrf_token,
-      "categories": JSON.stringify([{"id": id, "delete": true}])
+      "categories": JSON.stringify([{ "id": id, "delete": true }])
     },
     type: "post"
   }).then(response => {
@@ -74,7 +74,7 @@ const addVAT = document.getElementById("add-vat");
 if (addVAT) {
   addVAT.addEventListener("click", e => {
     const table = document.getElementById("vat");
-    let template = document.getElementById("template-vat-item").cloneNode(deep=true);
+    let template = document.getElementById("template-vat-item").cloneNode(deep = true);
     template.classList = "vat-item";
     template.id = 0;
     table.appendChild(template)
@@ -86,7 +86,7 @@ const updateVAT = document.getElementById("update-vat");
 if (updateVAT) {
   updateVAT.addEventListener("click", e => {
     let items = [];
-    
+
     const vatItems = Array.from(document.getElementsByClassName("vat-item"));
     vatItems.forEach(vat => {
       let percentage = vat.querySelector(".form-control").value.trim();
@@ -130,7 +130,7 @@ function delete_vat(id) {
     url: `/vat/edit`,
     data: {
       "csrfmiddlewaretoken": csrf_token,
-      "vat": JSON.stringify([{"id": id, "delete": true}])
+      "vat": JSON.stringify([{ "id": id, "delete": true }])
     },
     type: "post"
   }).then(response => {
@@ -166,9 +166,14 @@ if (exportTransactions) {
   exportTransactions.addEventListener("click", e => {
     const from = document.getElementById("from-date").value;
     const to = document.getElementById("to-date").value;
-    const export_dropdown = document.getElementById("export-type")
+
+    const export_dropdown = document.getElementById("export-type");
     const export_type = export_dropdown.options[export_dropdown.selectedIndex].value;
-    const url = `/transactions/export?type=${export_type}&start_date=${from}&end_date=${to}`;
+
+    const reponse_dropdown = document.getElementById("response-type");
+    const response_type = reponse_dropdown.options[reponse_dropdown.selectedIndex].value;
+
+    const url = `/transactions/export?type=${export_type}&start_date=${from}&end_date=${to}&response_type=${response_type}`;
     window.open(url, "_blank");
   });
 }

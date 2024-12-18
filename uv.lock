@@ -200,6 +200,20 @@ wheels = [
 ]
 
 [[package]]
+name = "mollie-api-python"
+version = "3.7.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+    { name = "requests-oauthlib" },
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/61/55/0ae303a63abb6faa9e448b4c9e5188e7af30f5a71f7dc3e40442023e9740/mollie_api_python-3.7.4.tar.gz", hash = "sha256:9005f10478fd628c5745712e4f99d26120c1efebd8b59cbf720b2ed659aa4f52", size = 62462 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a0/06/66563dd75ea115f1fb35781bc928419aa1d6f86b3a690f0df7aeccfe747c/mollie_api_python-3.7.4-py3-none-any.whl", hash = "sha256:0d5cd4b2cc8c124c948a1fd997e8409902ff262946b8244e387f20ea972b83ab", size = 52057 },
+]
+
+[[package]]
 name = "mozilla-django-oidc"
 version = "2.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -212,6 +226,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e0/b0/1394477f5ed612f0893df89d722f3268c1f2a5fd617dec5c1b4fa02bb073/mozilla-django-oidc-2.0.0.tar.gz", hash = "sha256:a8b2f27c69c122d2f4d801c3759761d33debf06ae9dabbab8aed82887bba3bb8", size = 32025 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e7/d2/28a67d605371fcf8fe31e88926f400299653bde4256c6606ac9bc15d61a0/mozilla_django_oidc-2.0.0-py2.py3-none-any.whl", hash = "sha256:53c39755b667e8c5923b1dffc3c29673198d03aa107aa42ac86b8a38b4720c25", size = 26248 },
+]
+
+[[package]]
+name = "oauthlib"
+version = "3.2.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/6d/fa/fbf4001037904031639e6bfbfc02badfc7e12f137a8afa254df6c4c8a670/oauthlib-3.2.2.tar.gz", hash = "sha256:9859c40929662bec5d64f34d01c99e093149682a3f38915dc0655d5a633dd918", size = 177352 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7e/80/cab10959dc1faead58dc8384a781dfbf93cb4d33d50988f7a69f1b7c9bbe/oauthlib-3.2.2-py3-none-any.whl", hash = "sha256:8139f29aac13e25d502680e9e19963e83f16838d48a0d71c287fe40e7067fbca", size = 151688 },
 ]
 
 [[package]]
@@ -307,6 +330,19 @@ wheels = [
 ]
 
 [[package]]
+name = "requests-oauthlib"
+version = "2.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "oauthlib" },
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/42/f2/05f29bc3913aea15eb670be136045bf5c5bbf4b99ecb839da9b422bb2c85/requests-oauthlib-2.0.0.tar.gz", hash = "sha256:b3dffaebd884d8cd778494369603a9e7b58d29111bf6b41bdc2dcd87203af4e9", size = 55650 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3b/5d/63d4ae3b9daea098d5d6f5da83984853c1bbacd5dc826764b249fe119d24/requests_oauthlib-2.0.0-py2.py3-none-any.whl", hash = "sha256:7dd8a5c40426b779b0868c404bdef9768deccf22749cde15852df527e6269b36", size = 24179 },
+]
+
+[[package]]
 name = "sentry-sdk"
 version = "2.19.0"
 source = { registry = "https://pypi.org/simple" }
@@ -363,6 +399,7 @@ dependencies = [
     { name = "gunicorn" },
     { name = "idna" },
     { name = "josepy" },
+    { name = "mollie-api-python" },
     { name = "mozilla-django-oidc" },
     { name = "packaging" },
     { name = "pillow" },
@@ -390,6 +427,7 @@ requires-dist = [
     { name = "gunicorn", specifier = "==23.0.0" },
     { name = "idna", specifier = "==3.10" },
     { name = "josepy", specifier = "==1.14.0" },
+    { name = "mollie-api-python", specifier = ">=3.7.4" },
     { name = "mozilla-django-oidc", specifier = "==2.0.0" },
     { name = "packaging", specifier = "==24.2" },
     { name = "pillow", specifier = "==11.0.0" },

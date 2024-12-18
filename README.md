@@ -18,13 +18,7 @@ Copy `sample.env` to `.env` and make sure the database options are correct. By d
 
 ```bash
 docker compose up -d
-uv run --env-file .env ./manage.py migrate
-```
-
-In development, create an admin superuser
-
-```bash
-uv run --env-file .env ./manage.py createsuperuser
+uv run --env-file .env manage.py migrate
 ```
 
 Then depending on whether you want to use a local version of koala, you need to do some additional setup:
@@ -78,12 +72,34 @@ Then depending on whether you want to use a local version of koala, you need to 
   
   Copy the application id and secret into the `.env` file and make sure you update the oauth urls to point to koala.dev.svsticky.nl.
 
+  Then complete the `.env` file by filling out the following values:
+
+  ```env
+  USER_URL=https://koala.dev.svsticky.nl
+
+  ALLOWED_HOSTS=localhost
+  OIDC_RP_CLIENT_ID=<secret from koala>
+  OIDC_RP_CLIENT_SECRET=<secret from koala>
+
+  OIDC_OP_AUTHORIZATION_ENDPOINT=https://koala.dev.svsticky.nl/api/oauth/authorize
+  OIDC_OP_TOKEN_ENDPOINT=https://koala.dev.svsticky.nl/api/oauth/token
+  OIDC_OP_USER_ENDPOINT=https://koala.dev.svsticky.nl/oauth/userinfo
+  OIDC_OP_JWKS_ENDPOINT=https://koala.dev.svsticky.nl/oauth/discovery/keys
+  OIDC_OP_LOGOUT_ENDPOINT=https://koala.dev.svsticky.nl/signout
+  ```
+
+Lastly, make sure you have the mollie api key if you want to work with the iDeal payment system. If you leave it blank, mongoose will still work, except for submitting the top up form. For development you want to use a test token, which can be found in the IT Crowd bitwarden.
+
+```env
+MOLLIE_API_KEY=test_<secret from bitwarden>
+```
+
 ## Running
 
 ``` bash
-# Database
+# Start the database, if it wasn't already running
 docker compose up -d
 
 # Server
-uv run --env-file .env ./manage.py runserver
+uv run --env-file .env manage.py runserver
 ```

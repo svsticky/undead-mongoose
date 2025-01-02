@@ -18,13 +18,7 @@ Copy `sample.env` to `.env` and make sure the database options are correct. By d
 
 ```bash
 docker compose up -d
-uv run --env-file .env ./manage.py migrate
-```
-
-In development, create an admin superuser
-
-```bash
-uv run --env-file .env ./manage.py createsuperuser
+uv run --env-file .env manage.py migrate
 ```
 
 Then depending on whether you want to use a local version of koala, you need to do some additional setup:
@@ -78,12 +72,46 @@ Then depending on whether you want to use a local version of koala, you need to 
   
   Copy the application id and secret into the `.env` file and make sure you update the oauth urls to point to koala.dev.svsticky.nl.
 
+  Then complete the `.env` file by filling out the following values:
+
+  ```env
+  USER_URL=https://koala.dev.svsticky.nl
+
+  ALLOWED_HOSTS=localhost
+  OIDC_RP_CLIENT_ID=<secret from koala>
+  OIDC_RP_CLIENT_SECRET=<secret from koala>
+
+  OIDC_OP_AUTHORIZATION_ENDPOINT=https://koala.dev.svsticky.nl/api/oauth/authorize
+  OIDC_OP_TOKEN_ENDPOINT=https://koala.dev.svsticky.nl/api/oauth/token
+  OIDC_OP_USER_ENDPOINT=https://koala.dev.svsticky.nl/oauth/userinfo
+  OIDC_OP_JWKS_ENDPOINT=https://koala.dev.svsticky.nl/oauth/discovery/keys
+  OIDC_OP_LOGOUT_ENDPOINT=https://koala.dev.svsticky.nl/signout
+  ```
+
+### iDeal payments
+
+If you want to work with the iDeal payment system, make sure you have the mollie api key. If you leave it blank, mongoose will still work, except for submitting the top up form. For development you want to use a test token, which can be found in the IT Crowd bitwarden.
+
+```env
+MOLLIE_API_KEY=test_<secret from bitwarden>
+```
+
+To do test payments, you need to use [ngrok](https://ngrok.com/) to forward your local mongoose installation to a public domain, so that mollie can send webhook requests to your local installation. If you have mongoose running as usual, then you only need to run the following command in a separate terminal:
+
+```bash
+ngrok http http://localhost:8000
+```
+
+ngrok will open a tunnel and bind your mongoose to a public url, update the `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS` fields to include the url from ngrok. Lastly, update the koala oauth application (at `<koala_url>/api/oauth/applications` as explained above) to use the ngrok url as an additional callback uri.
+
+Visiting the ngrok url should give your mongoose installation, and you can just use that url to continue development.
+
 ## Running
 
 ``` bash
-# Database
+# Start the database, if it wasn't already running
 docker compose up -d
 
 # Server
-uv run --env-file .env ./manage.py runserver
+uv run --env-file .env manage.py runserver
 ```

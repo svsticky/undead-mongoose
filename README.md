@@ -88,11 +88,23 @@ Then depending on whether you want to use a local version of koala, you need to 
   OIDC_OP_LOGOUT_ENDPOINT=https://koala.dev.svsticky.nl/signout
   ```
 
-Lastly, make sure you have the mollie api key if you want to work with the iDeal payment system. If you leave it blank, mongoose will still work, except for submitting the top up form. For development you want to use a test token, which can be found in the IT Crowd bitwarden.
+### iDeal payments
+
+If you want to work with the iDeal payment system, make sure you have the mollie api key. If you leave it blank, mongoose will still work, except for submitting the top up form. For development you want to use a test token, which can be found in the IT Crowd bitwarden.
 
 ```env
 MOLLIE_API_KEY=test_<secret from bitwarden>
 ```
+
+To do test payments, you need to use [ngrok](https://ngrok.com/) to forward your local mongoose installation to a public domain, so that mollie can send webhook requests to your local installation. If you have mongoose running as usual, then you only need to run the following command in a separate terminal:
+
+```bash
+ngrok http http://localhost:8000
+```
+
+ngrok will open a tunnel and bind your mongoose to a public url, update the `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS` fields to include the url from ngrok. Lastly, update the koala oauth application (at `<koala_url>/api/oauth/applications` as explained above) to use the ngrok url as an additional callback uri.
+
+Visiting the ngrok url should give your mongoose installation, and you can just use that url to continue development.
 
 ## Running
 

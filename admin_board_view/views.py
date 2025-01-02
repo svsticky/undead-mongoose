@@ -391,6 +391,12 @@ def export_sale_transactions(request):
                 name = "pin betaling" if export_type == "pin" else t.transaction_id
                 response_string += f'"",8002,Mongoose - {name},9,{"{:.2f}".format(t.transaction_sum)},""\n'
 
+                # Add transaction fee row for each mollie payment
+                if export_type == "mollie":
+                    response_string += (
+                        '"",5007,Mongoose transaction fee 0.39 x 1,21,0.39,TRX\n'
+                    )
+
             # Return the export "csv"
             return HttpResponse(response_string, content_type="text/csv")
         elif response_type == "json":

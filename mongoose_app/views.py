@@ -342,8 +342,9 @@ def topup(request):
 
     if bound_form.is_valid():
         user = User.objects.get(email=request.user)
+        transaction_amount = bound_form.cleaned_data["amount"]
         transaction = IDealTransaction.objects.create(
-            user_id=user, transaction_sum=bound_form.cleaned_data["amount"]
+            user_id=user, transaction_sum=transaction_amount
         )
 
         webhook_url = request.build_absolute_uri(
@@ -357,7 +358,7 @@ def topup(request):
             {
                 "amount": {
                     "currency": "EUR",
-                    "value": f'{bound_form.cleaned_data["amount"]:.2f}',
+                    "value": f"{(transaction_amount + settings.TRANSACTION_FEE):.2f}",
                 },
                 "description": "Top up mongoose balance",
                 "redirectUrl": redirect_url,

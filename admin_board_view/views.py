@@ -82,6 +82,7 @@ def index(request):
                 "form": TopUpForm,
                 "transaction": transaction,
                 "PaymentStatus": PaymentStatus,
+                "TRANSACTION_FEE": settings.TRANSACTION_FEE,
             },
         )
 

@@ -10,6 +10,7 @@ from itertools import groupby
 
 from admin_board_view.middleware import dashboard_authenticated, dashboard_admin
 from admin_board_view.utils import create_paginator
+from undead_mongoose.settings import TRANSACTION_FEE
 from .models import *
 from mollie.api.client import Client
 from django.conf import settings
@@ -391,11 +392,10 @@ def export_sale_transactions(request):
                 name = "pin betaling" if export_type == "pin" else t.transaction_id
                 response_string += f'"",8002,Mongoose - {name},9,{"{:.2f}".format(t.transaction_sum)},""\n'
 
-                # Add transaction fee row for each mollie payment
-                if export_type == "mollie":
-                    response_string += (
-                        '"",5007,Mongoose transaction fee 0.39 x 1,21,0.39,TRX\n'
-                    )
+            # Add transaction fee row mollie payments
+            if export_type == "mollie":
+                t_count = len(data)
+                response_string += f'"",5007,Mongoose transaction fee {settings.TRANSACTION_FEE:.2f} x {t_count},21,{t_count * settings.TRANSACTION_FEE:.2f},TRX\n'
 
             # Return the export "csv"
             return HttpResponse(response_string, content_type="text/csv")

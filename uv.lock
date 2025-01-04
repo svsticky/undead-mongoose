@@ -424,6 +424,7 @@ requires-dist = [
     { name = "django-constance", specifier = "==2.8.0" },
     { name = "django-environ", specifier = "==0.11.2" },
     { name = "django-picklefield", specifier = "==3.2" },
+    { name = "gunicorn" },
     { name = "gunicorn", specifier = "==23.0.0" },
     { name = "idna", specifier = "==3.10" },
     { name = "josepy", specifier = "==1.14.0" },

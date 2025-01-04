@@ -77,11 +77,11 @@
             </tr>
           </thead>
           <tbody>
-            {% for top_up in top_ups.object_list %}
+            {% for date, sum, type in top_ups %}
             <tr>
-              <td>{{ top_up.date }}</td>
-              <td>€{{ top_up.transaction_sum }}</td>
-              <td>{% if top_up.type == 1 %}Pin{% elif top_up.type == 2 %}Credit card{% elif top_up.type == 3 %}Mollie{% endif %}</td>
+              <td>{{ date }}</td>
+              <td>€{{ sum }}</td>
+              <td>{{ type }}</td>
             </tr>
           {% endfor %}
           </tbody>

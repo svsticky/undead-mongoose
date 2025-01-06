@@ -368,7 +368,7 @@ def topup(request):
         )
         return redirect(payment.checkout_url)
     else:
-        return HttpResponse(status=400)
+        return redirect("/?error=1")
 
 
 @csrf_exempt

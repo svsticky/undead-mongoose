@@ -390,8 +390,12 @@ def export_sale_transactions(request):
 
             # Add the transactions to the export "csv"
             for t in data:
-                name = "pin betaling" if export_type == "pin" else t.transaction_id
-                response_string += f'"",8002,Mongoose - {name},9,{"{:.2f}".format(t.transaction_sum)},""\n'
+                name = (
+                    "pin betaling"
+                    if export_type == "pin"
+                    else f"topup {t.user_id.name}"
+                )
+                response_string += f'"",8002,Mongoose - {name},0,{"{:.2f}".format(t.transaction_sum)},""\n'
 
             # Add transaction fee row mollie payments
             if export_type == "mollie":

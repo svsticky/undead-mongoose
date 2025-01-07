@@ -83,6 +83,7 @@ def index(request):
                 "transaction": transaction,
                 "PaymentStatus": PaymentStatus,
                 "TRANSACTION_FEE": settings.TRANSACTION_FEE,
+                "error": request.GET.get("error"),
             },
         )
 

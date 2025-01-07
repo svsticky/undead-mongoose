@@ -2,6 +2,8 @@
 {% load static %}
 {% block body %}
 <main class="container mt-3">
+
+  <!-- Transaction status -->
   {% if transaction %}
     {% if transaction.status == PaymentStatus.PAID %}
       <div class="alert alert-success">
@@ -17,6 +19,16 @@
       </div>
     {% endif %}
   {% endif %}
+
+  <!-- Validation errors -->
+  {% if error %}
+    <div class="alert alert-danger">
+      {% if error == "1" %}
+        You entered an invalid number to the top up form, try entering an amount greater than €0 and less than €1000 with at most two decimals.
+      {% endif %}
+    </div>
+  {% endif %}
+
   <h1>Welcome {{ user_info.name }}</h1>
   <h5 class="mb-2">
     Current balance: <b>{{ user_info.euro_balance }}</b>
@@ -85,7 +97,7 @@
                 <label for="amount" class="sr-only">Amount: </label>
               </div>
               <div class="form-group col">
-                <input placeholder="Amount" class="form-control" type="number" min="0" step="0.01" name="amount" />
+                <input placeholder="Amount" class="form-control" type="number" min="0" step="0.01" name="amount" required />
               </div>
               <div class="form-group col">
                 <button type="submit" class="btn btn-primary">Top up</button>

@@ -372,7 +372,7 @@ def export_sale_transactions(request):
                 return HttpResponse("No date range given.", status=400)
 
             data = IDealTransaction.objects.filter(
-                date__range=[start_date, end_date]
+                date__range=[start_date, end_date], status=PaymentStatus.PAID
             ).all()
         elif export_type == "pin":
             # Require either dates or just one

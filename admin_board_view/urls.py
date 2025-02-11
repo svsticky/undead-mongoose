@@ -11,6 +11,7 @@ urlpatterns = [
     path('users/<str:user_id>', views.users, name='user'),
     path('settings', views.settings_page, name='settings'),
     path('transactions', views.transactions, name='transactions'),
+    path('salesInfo', views.salesInfo, name='salesInfo'),
 
     path('product/toggle', views.toggle, name='toggle'),
     path('product/delete', views.delete, name='delete'),

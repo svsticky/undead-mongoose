@@ -343,6 +343,43 @@ def transactions(request):
         },
     )
 
+@dashboard_admin
+def salesInfo(request):
+    today = timezone.now().date()
+    default_from_date = today - timedelta(days=7)
+    default_to_date = today
+
+    from_date = request.GET.get('from_date', default_from_date.strftime('%Y-%m-%d'))
+    to_date = request.GET.get('to_date', default_to_date.strftime('%Y-%m-%d'))
+    sort_order = request.GET.get('sort_order', 'descending')
+
+    if sort_order == 'ascending':
+        ordering = 'total_amount'
+        toggle_order = 'descending'
+    else:
+        ordering = '-total_amount'
+        toggle_order = 'ascending'
+
+    product_stats = ProductTransactions.objects.filter(
+        transaction_id__date__gte=from_date,
+        transaction_id__date__lte=to_date,
+        transaction_id__cancelled=False
+    ).values('product_id_id', 'product_id__name').annotate(
+        total_amount=Sum('amount')
+    ).order_by(ordering)
+
+    context = {
+        'productStats': product_stats,
+        'from_date': from_date,
+        'to_date': to_date,
+        'sort_order': sort_order,
+        'toggle_order': toggle_order,
+        'last_week': default_from_date,
+        'this_week': default_to_date,
+    }
+
+    return render(request, 'product_sales_info.html', context)
+
 
 @dashboard_admin
 def export_sale_transactions(request):

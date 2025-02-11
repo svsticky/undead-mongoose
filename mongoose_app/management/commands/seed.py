@@ -90,13 +90,22 @@ class Command(BaseCommand):
 
         # Cards and CardConfirmations
         card_id = 0
+        cards = []
         confirmation_id = 0
         for user in users:
-            num_cards = randint(0, 2)
+            chance = randint(1, 10)
+            if chance <= 1:
+                num_cards = 0
+            elif chance <= 8:
+                num_cards = 1
+            else:
+                num_cards = 2
+
             for _ in range(num_cards):
-                active = randint(0, 9) == 0
+                active = randint(0, 9) != 0
                 card = Card(card_id, faker.ean(length=8), active, user.id)
                 card.save()
+                cards.append(card)
                 card_id += 1
 
                 if active:
@@ -109,34 +118,6 @@ class Command(BaseCommand):
                     confirmation_id += 1
 
         print(f"Created {card_id} Cards")
-
-        # TopUp- and IDealTransactions
-        topup_trans_id = 0
-        trans_count = 0
-        for user in users:
-            num_transactions = randint(10, 20)
-            trans_count += num_transactions
-            for _ in range(num_transactions):
-                price = randprice(5, 100)
-                is_topup = randint(0, 5) == 0
-                if is_topup:
-                    topup = TopUpTransaction(
-                        topup_trans_id, user.id, price, datetime.now(), False, 1
-                    )
-                    topup.save()
-                    topup_trans_id += 1
-                else:
-                    ideal = IDealTransaction(
-                        user.id,
-                        price,
-                        datetime.now(),
-                        faker.uuid4(cast_to=None),
-                        faker.enum(PaymentStatus),
-                        False,
-                    )
-                    ideal.save()
-
-        print(f"Created {trans_count} TopUp- and IDealTransactions")
 
         # Categories
         num_nonalcoholic_categories = randint(3, 6)
@@ -174,36 +155,117 @@ class Command(BaseCommand):
 
         print(f"Created {len(products)} Products")
 
-        # Sale- and ProductTransactions
+        # TopUp- and IDealTransactions
+        topup_trans_id = 0
+        trans_count = 0
         prod_trans_id = 0
-        for sale_trans_id in range(0, 200):
-            cancelled = randint(0, 50) == 0
-            user = randelem(users)
-            product = randelem(products)
-            amount = randint(1, 8)
-            three_years_ago = datetime.now() - timedelta(days=3 * 365)
-            date = faker.date_time_between(three_years_ago)
-            sale_trans = SaleTransaction(
-                sale_trans_id,
-                user.id,
-                amount * product.price,
-                date,
-                cancelled,
-                cancelled,
-            )
-            sale_trans.save()
-            if not cancelled:
-                prod_trans = ProductTransactions(
-                    prod_trans_id,
-                    product.id,
-                    sale_trans_id,
-                    product.price,
-                    product.vat.percentage,
-                    amount,
-                )
-                prod_trans_id += 1
-                prod_trans.save()
+        sale_trans_id = 0
+        for user in users:
+            if not any(
+                card.user_id.user_id == user.id and card.active for card in cards
+            ):
+                continue
 
+            num_transactions = randint(10, 20)
+            trans_count += num_transactions
+
+            # TODO: Only create transactions after the date the card was activated
+
+            three_years_ago = datetime.now() - timedelta(days=3 * 365)
+            dates = sorted(
+                [
+                    faker.date_time_between(three_years_ago)
+                    for _ in range(num_transactions)
+                ]
+            )
+
+            balance = 0
+            # Process the topup transactions in chronological order
+            for start_date, end_date in zip(dates, [*dates[1:], datetime.now()]):
+                # Create topup
+                topup_price = randprice(5, 100)
+                balance += topup_price
+                is_topup = randint(0, 5) == 0
+                if is_topup:
+                    topup = TopUpTransaction(
+                        topup_trans_id, user.id, topup_price, start_date, False, 1
+                    )
+                    topup.save()
+                    topup_trans_id += 1
+                else:
+                    # TODO: IDeal transactions should succeed but some unsuccessful ones should be created too
+
+                    ideal = IDealTransaction(
+                        user.id,
+                        topup_price,
+                        start_date,
+                        faker.uuid4(cast_to=None),
+                        PaymentStatus.PAID,
+                        False,
+                    )
+                    ideal.save()
+
+                trans_text = "Topup" if is_topup else "iDeal"
+                print(f"Created {trans_text} transaction for €{topup_price}")
+
+                # Then spend the money from the topup
+                cart = []
+                while True:
+                    amount = randint(1, 3)
+                    product = randelem(products)
+                    if amount * product.price > balance:
+                        if len(cart) == 0:
+                            # We need at least one product transaction per sale transaction
+                            continue
+                        else:
+                            break
+
+                    balance -= amount * product.price
+                    cart.append((amount, product))
+
+                # TODO: Create some cancelled sale transactions
+
+                # Divide the cart into some sale transactions, at most 3 if the cart is big enough
+                num_sale_trans = randint(1, min(3, len(cart)))
+                for i in range(num_sale_trans):
+                    start_index = int(i * len(cart) / num_sale_trans)
+                    end_index = int((i + 1) * len(cart) / num_sale_trans)
+
+                    cart_slice = cart[start_index:end_index]
+                    trans_total = sum(
+                        amount * product.price for amount, product in cart_slice
+                    )
+
+                    sale_trans = SaleTransaction(
+                        sale_trans_id,
+                        user.id,
+                        trans_total,
+                        faker.date_time_between(start_date, end_date),
+                        False,
+                        False,
+                    )
+                    sale_trans.save()
+                    sale_trans_id += 1
+
+                    # Products in the cart are evenly divided into sale transactions
+                    for amount, product in cart_slice:
+                        prod_trans = ProductTransactions(
+                            prod_trans_id,
+                            product.id,
+                            sale_trans.id,
+                            product.price,
+                            product.vat.percentage,
+                            amount,
+                        )
+                        prod_trans_id += 1
+                        prod_trans.save()
+
+                cart_total = sum(amount * product.price for amount, product in cart)
+                print(
+                    f"Created {num_sale_trans} SaleTransaction and {len(cart)} ProductTransactions totalling €{cart_total}"
+                )
+
+        print(f"Created {trans_count} TopUp- and IDealTransactions")
         print(f"Created {prod_trans_id} Sale- and ProductTransactions")
 
 

@@ -4,9 +4,20 @@ from random import randint
 from faker import Faker
 from faker.providers import misc, color, company, person, barcode
 from decimal import Decimal
-from mongoose_app.models import *
-
-# TODO: Turn one of the users into test@svsticky.nl
+from mongoose_app.models import (
+    Configuration,
+    User,
+    Card,
+    CardConfirmation,
+    TopUpTransaction,
+    IDealTransaction,
+    SaleTransaction,
+    ProductTransactions,
+    Product,
+    Category,
+    VAT,
+    PaymentStatus,
+)
 
 
 class Command(BaseCommand):
@@ -71,8 +82,11 @@ def seed():
         for user_id in range(20)
     ]
     for user in users:
-        print(user.name)
         user.save()
+
+    test_user = randelem(users)
+    test_user.email = "test@svsticky.nl"
+    test_user.save()
 
     # Cards and CardConfirmations
     card_id = 0
@@ -96,7 +110,6 @@ def seed():
 
     # TopUp- and IDealTransactions
     topup_trans_id = 0
-    ideal_trans_id = 0
     for user in users:
         num_transactions = randint(10, 20)
         for _ in range(num_transactions):

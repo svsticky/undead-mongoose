@@ -221,7 +221,7 @@ def users(request, user_id=None):
 def settings_page(request):
     vat = VAT.objects.all()
     categories = Category.objects.all()
-    configuration = Configuration.objects.get(pk=1)
+    configuration = Configuration.objects.all()[0]
     return render(
         request,
         "settings.html",

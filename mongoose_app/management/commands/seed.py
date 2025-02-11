@@ -196,8 +196,7 @@ class Command(BaseCommand):
                     topup.save()
                     topup_trans_id += 1
                 else:
-                    # TODO: IDeal transactions should succeed but some unsuccessful ones should be created too
-
+                    is_paid = randint(1, 10) == 1
                     ideal = IDealTransaction(
                         user.id,
                         topup_price,
@@ -206,7 +205,18 @@ class Command(BaseCommand):
                         PaymentStatus.PAID,
                         False,
                     )
-                    ideal.save()
+                    if is_paid:
+                        ideal.save()
+                    else:
+                        chance = randint(1, 10)
+                        if chance <= 4:
+                            ideal.status = PaymentStatus.CANCELLED
+                        elif chance <= 7:
+                            ideal.status = PaymentStatus.OPEN
+                        else:
+                            ideal.status = PaymentStatus.PENDING
+                        ideal.save()
+                        continue
 
                 trans_text = "Topup" if is_topup else "iDeal"
                 print(f"Created {trans_text} transaction for €{topup_price}")

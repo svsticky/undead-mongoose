@@ -91,6 +91,7 @@ class Command(BaseCommand):
         # Cards and CardConfirmations
         card_id = 0
         cards = []
+        confirms = []
         confirmation_id = 0
         for user in users:
             chance = randint(1, 10)
@@ -116,6 +117,7 @@ class Command(BaseCommand):
                     )
                     confirmation.save()
                     confirmation_id += 1
+                    confirms.append(confirmation)
 
         print(f"Created {card_id} Cards")
 
@@ -169,14 +171,15 @@ class Command(BaseCommand):
             num_transactions = randint(10, 20)
             trans_count += num_transactions
 
-            # TODO: Only create transactions after the date the card was activated
+            # First the earliest card confirmation that is linked to this user
+            first_date = sorted(
+                confirm.timestamp
+                for confirm in confirms
+                if confirm.card.user_id.user_id == user.id
+            )[0]
 
-            three_years_ago = datetime.now() - timedelta(days=3 * 365)
             dates = sorted(
-                [
-                    faker.date_time_between(three_years_ago)
-                    for _ in range(num_transactions)
-                ]
+                [faker.date_time_between(first_date) for _ in range(num_transactions)]
             )
 
             balance = 0

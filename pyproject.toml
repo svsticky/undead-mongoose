@@ -24,7 +24,8 @@ dependencies = [
   "urllib3==2.2.3",
   "python-dotenv[cli]",
   "mollie-api-python>=3.7.4",
-  "gunicorn"
+  "gunicorn",
+  "faker>=35.2.0",
 ]
 name = "undead-mongoose"
 version = "1.0.0"

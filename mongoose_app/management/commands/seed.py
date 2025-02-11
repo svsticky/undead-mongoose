@@ -1,6 +1,6 @@
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from datetime import datetime, timedelta
-import random
+from random import randint
 from faker import Faker
 from faker.providers import misc, color, company, person, barcode
 from decimal import Decimal
@@ -17,18 +17,37 @@ class Command(BaseCommand):
     #     parser.add_argument("seed", nargs="+", type=int)
 
     def handle(self, *args, **options):
+        remove_data()
         seed()
 
 
 def randprice(start, end):
-    euros = random.randint(start, end - 1)
-    cents = random.randint(0, 99)
+    euros = randint(start, end - 1)
+    cents = randint(0, 99)
     return Decimal(f"{euros}.{cents}")
 
 
 def randelem(l):
-    index = random.randint(0, len(l) - 1)
+    index = randint(0, len(l) - 1)
     return l[index]
+
+
+def remove_data():
+    models = [
+        Configuration,
+        User,
+        Card,
+        CardConfirmation,
+        TopUpTransaction,
+        IDealTransaction,
+        SaleTransaction,
+        ProductTransactions,
+        Product,
+        Category,
+        VAT,
+    ]
+    for model in models:
+        model.objects.all().delete()
 
 
 def seed():
@@ -59,9 +78,9 @@ def seed():
     card_id = 0
     confirmation_id = 0
     for user in users:
-        num_cards = random.randint(0, 2)
+        num_cards = randint(0, 2)
         for _ in range(num_cards):
-            active = random.randint(0, 9) == 0
+            active = randint(0, 9) == 0
             card = Card(card_id, faker.ean(length=8), active, user.id)
             card.save()
             card_id += 1
@@ -79,10 +98,10 @@ def seed():
     topup_trans_id = 0
     ideal_trans_id = 0
     for user in users:
-        num_transactions = random.randint(10, 20)
+        num_transactions = randint(10, 20)
         for _ in range(num_transactions):
             price = randprice(5, 100)
-            is_topup = random.randint(0, 5) == 0
+            is_topup = randint(0, 5) == 0
             if is_topup:
                 topup = TopUpTransaction(
                     topup_trans_id, user.id, price, datetime.now(), False, 1
@@ -114,7 +133,7 @@ def seed():
         category.save()
 
     # VATs
-    vats = [VAT(id, random.randint(0, 100)) for id in range(0, 2)]
+    vats = [VAT(id, randint(0, 100)) for id in range(0, 2)]
     for vat in vats:
         vat.save()
 
@@ -124,7 +143,7 @@ def seed():
         price = randprice(0, 10)
         category = randelem(categories)
         vat = randelem(vats)
-        enabled = random.randint(0, 10) > 3
+        enabled = randint(0, 10) > 3
         product = Product(
             id, faker.catch_phrase(), price, None, category.id, vat.id, enabled
         )
@@ -134,10 +153,10 @@ def seed():
     # Sale- and ProductTransactions
     prod_trans_id = 0
     for sale_trans_id in range(0, 200):
-        cancelled = random.randint(0, 50) == 0
+        cancelled = randint(0, 50) == 0
         user = randelem(users)
         product = randelem(products)
-        amount = random.randint(1, 8)
+        amount = randint(1, 8)
         three_years_ago = datetime.now() - timedelta(days=3 * 365)
         date = faker.date_time_between(three_years_ago)
         sale_trans = SaleTransaction(

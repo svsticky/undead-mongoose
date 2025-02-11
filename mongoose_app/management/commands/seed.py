@@ -23,13 +23,14 @@ from mongoose_app.models import (
 class Command(BaseCommand):
     help = "Seed the database"
 
-    # TODO: Add option to pass seed
-    # def add_arguments(self, parser):
-    #     parser.add_argument("seed", nargs="+", type=int)
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--seed", type=int, help="Seed for the faker instance to use"
+        )
 
     def handle(self, *args, **options):
         remove_data()
-        seed()
+        seed(options["seed"])
 
 
 def randprice(start, end):
@@ -61,10 +62,12 @@ def remove_data():
         model.objects.all().delete()
 
 
-def seed():
+def seed(seed):
     faker = Faker("nl_NL")
     for provider in [misc, color, company, person, barcode]:
         faker.add_provider(provider)
+    if seed:
+        faker.seed_instance(seed)
 
     # Configuration
     Configuration().save()
@@ -75,7 +78,7 @@ def seed():
             user_id,
             user_id,
             faker.name(),
-            faker.date_of_birth(),
+            faker.date_of_birth(minimum_age=15, maximum_age=28),
             faker.email(),
             Decimal(0),
         )
@@ -130,7 +133,6 @@ def seed():
                     faker.enum(PaymentStatus),
                     False,
                 )
-                # ideal_trans_id += 1
                 ideal.save()
 
     # Categories

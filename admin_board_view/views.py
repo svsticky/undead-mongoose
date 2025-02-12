@@ -51,7 +51,6 @@ def index(request):
                     "values": member_list,
                 }
             )
-        print(product_sale_groups[0], "\n\n")
         product_sale_groups.sort(key=itemgetter("date"), reverse=True)
         sales_page = create_paginator(product_sale_groups, request.GET.get("sales"))
         transaction_id = request.GET.dict().get("transaction_id")
@@ -77,7 +76,6 @@ def index(request):
             + [(d, t, "iDeal") for d, t in ideal_transactions],
             key=lambda transaction: transaction[0], reverse=True
         )
-        print(all_top_ups[0], "\n \n")
         top_up_page = create_paginator(all_top_ups, request.GET.get("top_ups"))
         return render(
             request,

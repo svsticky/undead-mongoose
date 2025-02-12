@@ -1,5 +1,5 @@
 import json
-
+from operator import itemgetter
 from django.db.models import Sum
 from django.http.response import JsonResponse
 from django.shortcuts import render, HttpResponseRedirect
@@ -43,11 +43,16 @@ def index(request):
         for designation, member_group in groupby(
             product_sales, lambda sale: sale.transaction_id
         ):
+            member_list = list(member_group)
             product_sale_groups.append(
-                {"key": designation, "values": list(member_group)}
+                {
+                    "key": designation,
+                    "date": member_list[0].transaction_id.date,
+                    "values": member_list,
+                }
             )
+        product_sale_groups.sort(key=itemgetter("date"), reverse=True)
         sales_page = create_paginator(product_sale_groups, request.GET.get("sales"))
-
         transaction_id = request.GET.dict().get("transaction_id")
         transaction = (
             IDealTransaction.objects.get(transaction_id=transaction_id)
@@ -69,7 +74,7 @@ def index(request):
         all_top_ups = sorted(
             [(d, t, "Pin") for d, t in top_ups]
             + [(d, t, "iDeal") for d, t in ideal_transactions],
-            key=lambda transaction: transaction[0],
+            key=lambda transaction: transaction[0], reverse=True
         )
         top_up_page = create_paginator(all_top_ups, request.GET.get("top_ups"))
         return render(

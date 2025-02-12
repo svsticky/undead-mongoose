@@ -199,7 +199,7 @@ class Command(BaseCommand):
                     ideal = IDealTransaction(
                         user.id,
                         topup_price,
-                        start_date,
+                        faker.date_time_between(end_date - timedelta(days=3 * 365), end_date),
                         faker.uuid4(cast_to=None),
                         PaymentStatus.PAID,
                         False,
@@ -239,7 +239,7 @@ class Command(BaseCommand):
                         sale_trans_id,
                         user.id,
                         trans_total,
-                        faker.date_time_between(start_date, end_date),
+                        faker.date_time_between(end_date - timedelta(days=3 * 365), end_date),
                         False,
                         False,
                     )

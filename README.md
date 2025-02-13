@@ -21,6 +21,11 @@ docker compose up -d
 uv run --env-file .env manage.py migrate
 ```
 
+Optionally, you might want to populate the mongoose database with random mock data, run:
+
+```bash
+uv run --env-file .env manage.py seed
+```
 Then depending on whether you want to use a local version of koala, you need to do some additional setup:
 
 - *If you have a locally running version of koala*: (In development) Change `KOALA_DB_NAME` to `koala-development`

@@ -315,14 +315,11 @@ def settings_update(request):
 @dashboard_admin
 def transactions(request):
     # Get product sale groups
-    product_sales = ProductTransactions.objects.all()
-    product_sales_sorted = sorted(
-        product_sales, key=lambda sale: sale.transaction_id.date, reverse=True
-    )
+        # Get product sale groups
+    product_sales = ProductTransactions.objects.prefetch_related('transaction_id').order_by('transaction_id__date').reverse()
+
     product_sale_groups = []
-    for designation, member_group in groupby(
-        product_sales_sorted, lambda sale: sale.transaction_id
-    ):
+    for designation, member_group in groupby(product_sales, lambda sale: sale.transaction_id):
         product_sale_groups.append({"key": designation, "values": list(member_group)})
 
     # Get paginators

@@ -22,12 +22,19 @@ def index(request):
     if request.user.is_superuser:
         product_amount = Product.objects.count()
         total_balance = sum(user.balance for user in User.objects.all())
+        product_sales = ProductTransactions.objects.prefetch_related('transaction_id').order_by('transaction_id__date').reverse()
+        product_sale_groups = []
+        for designation, member_group in groupby(product_sales, lambda sale: sale.transaction_id):
+            product_sale_groups.append({"key": designation, "values": list(member_group)})
+        
+        sales_page = create_paginator(product_sale_groups[:5], request.GET.get("sales"))
         return render(
             request,
             "home.html",
             {
                 "users": User.objects.all(),
                 "product_amount": product_amount,
+                "sales": sales_page,
                 "total_balance": total_balance,
                 "top_types": top_up_types,
             },

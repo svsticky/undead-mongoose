@@ -322,7 +322,6 @@ def settings_update(request):
 @dashboard_admin
 def transactions(request):
     # Get product sale groups
-        # Get product sale groups
     product_sales = ProductTransactions.objects.prefetch_related('transaction_id').order_by('transaction_id__date').reverse()
 
     product_sale_groups = []

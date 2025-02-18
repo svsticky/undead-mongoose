@@ -22,12 +22,19 @@ def index(request):
     if request.user.is_superuser:
         product_amount = Product.objects.count()
         total_balance = sum(user.balance for user in User.objects.all())
+        product_sales = ProductTransactions.objects.prefetch_related('transaction_id').order_by('transaction_id__date').reverse()
+        product_sale_groups = []
+        for designation, member_group in groupby(product_sales, lambda sale: sale.transaction_id):
+            product_sale_groups.append({"key": designation, "values": list(member_group)})
+        
+        sales_page = create_paginator(product_sale_groups[:5], request.GET.get("sales"))
         return render(
             request,
             "home.html",
             {
                 "users": User.objects.all(),
                 "product_amount": product_amount,
+                "sales": sales_page,
                 "total_balance": total_balance,
                 "top_types": top_up_types,
             },
@@ -315,14 +322,10 @@ def settings_update(request):
 @dashboard_admin
 def transactions(request):
     # Get product sale groups
-    product_sales = ProductTransactions.objects.all()
-    product_sales_sorted = sorted(
-        product_sales, key=lambda sale: sale.transaction_id.date, reverse=True
-    )
+    product_sales = ProductTransactions.objects.prefetch_related('transaction_id').order_by('transaction_id__date').reverse()
+
     product_sale_groups = []
-    for designation, member_group in groupby(
-        product_sales_sorted, lambda sale: sale.transaction_id
-    ):
+    for designation, member_group in groupby(product_sales, lambda sale: sale.transaction_id):
         product_sale_groups.append({"key": designation, "values": list(member_group)})
 
     # Get paginators

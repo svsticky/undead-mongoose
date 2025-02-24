@@ -357,16 +357,15 @@ def salesInfo(request):
     default_from_date = today - timedelta(days=7)
     default_to_date = today
 
-    from_date = request.GET.get('from_date', default_from_date.strftime('%Y-%m-%d'))
-    to_date = request.GET.get('to_date', default_to_date.strftime('%Y-%m-%d'))
-    sort_order = request.GET.get('sort_order', 'descending')
+    from_date_str = request.GET.get('from_date', default_from_date.strftime('%Y-%m-%d'))
+    to_date_str = request.GET.get('to_date', default_to_date.strftime('%Y-%m-%d'))
 
-    if sort_order == 'ascending':
-        ordering = 'total_amount'
-        toggle_order = 'descending'
-    else:
-        ordering = '-total_amount'
-        toggle_order = 'ascending'
+    # Ensure the dates are timezone-aware
+    from_date = timezone.make_aware(datetime.strptime(from_date_str, '%Y-%m-%d'))
+    to_date = timezone.make_aware(datetime.strptime(to_date_str, '%Y-%m-%d'))
+
+    sort_order = request.GET.get('sort_order', 'descending')
+    ordering = 'total_amount' if sort_order == 'ascending' else '-total_amount'
 
     product_stats = ProductTransactions.objects.filter(
         transaction_id__date__gte=from_date,
@@ -381,7 +380,7 @@ def salesInfo(request):
         'from_date': from_date,
         'to_date': to_date,
         'sort_order': sort_order,
-        'toggle_order': toggle_order,
+        'toggle_order': 'ascending' if sort_order == 'descending' else 'descending',
         'last_week': default_from_date,
         'this_week': default_to_date,
     }
@@ -408,7 +407,7 @@ def export_sale_transactions(request):
         response_type = req_get.get("response_type")
 
         # Get the date range from the request
-        current_date = timezone.now().strftime("%Y-%m-%d")
+        current_date = timezone.now().strftime("%Y-%m-%d %H:%M:%S")
 
         # Select the relevant data
         if export_type == "mollie":
@@ -457,7 +456,7 @@ def export_sale_transactions(request):
                         "member_id": t.user_id.id,
                         "name": t.user_id.name,
                         "price": "{:.2f}".format(t.transaction_sum),
-                        "date": t.date.strftime("%Y-%m-%d"),
+                        "date": t.date.strftime("%Y-%m-%d %H:%M:%S"),
                     }
                     for t in data
                 ]

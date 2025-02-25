@@ -4,13 +4,20 @@ Django application for the mongoose backend & board interface.
 
 ## Prerequisites
 
-Install [uv](https://docs.astral.sh/uv/getting-started/installation/) and then let uv install the correct python version and the dependencies.
+- Install [uv](https://docs.astral.sh/uv/getting-started/installation/) and then let uv install the correct python version and the dependencies.
 
-```bash
-git clone https://github.com/svsticky/undead-mongoose.git
-cd undead-mongoose
-uv sync
-```
+  ```bash
+  git clone https://github.com/svsticky/undead-mongoose.git
+  cd undead-mongoose
+  uv sync
+  ```
+
+  While installing packages, you might run into the error that pg_config cannot be found. One way of solving this is installing development libraries for postgres. This differs per operating system, but on debian/ubuntu the following commands should fix the error
+
+  ```bash
+  sudo apt update && sudo apt install libpq-dev -y
+  ```
+- During development you need [docker](https://www.docker.com/) installed to get a postgres database up and runnning.
 
 ## Setting up
 

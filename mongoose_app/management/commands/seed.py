@@ -74,7 +74,7 @@ class Command(BaseCommand):
                 user_id,
                 user_id,
                 faker.name(),
-                make_aware(datetime.combine(faker.date_of_birth(minimum_age=15, maximum_age=28), datetime.min.time())),
+                faker.date_of_birth(minimum_age=15, maximum_age=28),
                 faker.email(),
                 Decimal(0),
             )

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load tz %}  <!-- Load timezone template tag at the top -->
 {% block body %}
 <div class="card">
   <div class="card-header">
@@ -61,7 +62,7 @@
             {% for transaction in sales %}
               <tr id="{{ transaction.key.id }}">
                 <td><a href="/users/{{ transaction.key.user_id.id }}">{{ transaction.key.user_id.name }}</a></td>
-                <td>{{ transaction.key.date }}</td>
+                <td>{{ transaction.key.date|timezone:"Europe/Amsterdam"|date:"F j, Y, H:i:s" }}</td>
                 <td>€{{ transaction.key.transaction_sum }}</td>
                 <td>
                   {% for product in transaction.values %}
@@ -90,7 +91,7 @@
             {% for top_up in top_ups.object_list %}
             <tr>
               <td><a href="/users/{{ top_up.user_id.id }}">{{ top_up.user_id.name }}</a></td>
-              <td>{{ top_up.date }}</td>
+              <td>{{ top_up.date|timezone:"Europe/Amsterdam"|date:"F j, Y, H:i:s" }}</td>
               <td>€{{ top_up.transaction_sum }}</td>
               <td>{% if top_up.type == 1 %}Pin{% elif top_up.type == 2 %}Credit card{% elif top_up.type == 3 %}Mollie{% endif %}</td>
             </tr>
@@ -115,14 +116,14 @@
             {% for top_up in ideal.object_list %}
             <tr>
               <td><a href="/users/{{ top_up.user_id.id }}">{{ top_up.user_id.name }}</a></td>
-              <td>{{ top_up.date }}</td>
+              <td>{{ top_up.date|timezone:"Europe/Amsterdam"|date:"F j, Y, H:i:s" }}</td> <!-- Use 24-hour format -->
               <td>€{{ top_up.transaction_sum }}</td>
               <td>iDeal</td>
             </tr>
           {% endfor %}
           </tbody>
         </table>
-        {% include "pagination_footer.html" with page=top_ups page_name='top_ups' %}
+        {% include "pagination_footer.html" with page=ideal page_name='ideal_sales' %}
       </div>
     </div>
   </div>

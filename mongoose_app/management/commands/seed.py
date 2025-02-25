@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand
+from django.utils.timezone import make_aware
 from datetime import datetime, timedelta
 from random import randint, seed as randseed
 from faker import Faker
@@ -111,7 +112,7 @@ class Command(BaseCommand):
 
                 if active:
                     three_years_ago = datetime.now() - timedelta(days=3 * 365)
-                    date = faker.date_time_between(three_years_ago)
+                    date = make_aware(faker.date_time_between(three_years_ago))
                     confirmation = CardConfirmation(
                         confirmation_id, date, card.id, faker.password(length=32)
                     )
@@ -179,7 +180,7 @@ class Command(BaseCommand):
             )[0]
 
             dates = sorted(
-                [faker.date_time_between(first_date) for _ in range(num_transactions)]
+                [make_aware(faker.date_time_between(first_date)) for _ in range(num_transactions)]
             )
 
             balance = 0
@@ -199,7 +200,7 @@ class Command(BaseCommand):
                     ideal = IDealTransaction(
                         user.id,
                         topup_price,
-                        faker.date_time_between(end_date - timedelta(days=3 * 365), end_date),
+                        make_aware(faker.date_time_between(end_date - timedelta(days=3 * 365), end_date)),
                         faker.uuid4(cast_to=None),
                         PaymentStatus.PAID,
                         False,
@@ -239,7 +240,7 @@ class Command(BaseCommand):
                         sale_trans_id,
                         user.id,
                         trans_total,
-                        faker.date_time_between(end_date - timedelta(days=3 * 365), end_date),
+                        make_aware(faker.date_time_between(end_date - timedelta(days=3 * 365), end_date)),
                         False,
                         False,
                     )

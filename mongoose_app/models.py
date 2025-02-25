@@ -9,7 +9,6 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.template.defaultfilters import mark_safe
 from django.utils import timezone
 
-
 top_up_types = [(1, "Pin"), (2, "Credit card"), (3, "Mollie")]
 
 
@@ -99,7 +98,7 @@ class Transaction(models.Model):
     user_id = models.ForeignKey("User", on_delete=models.SET_NULL, null=True)
     transaction_sum = models.DecimalField(max_digits=6, decimal_places=2)
     # TODO: Research auto_now
-    date = models.DateField(default=timezone.now)
+    date = models.DateTimeField(default=timezone.now)
 
     # Makes this class abstract which means that there won't be
     # a literal class for it in the database, do we want this?

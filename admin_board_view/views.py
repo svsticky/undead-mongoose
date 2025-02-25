@@ -5,8 +5,7 @@ from django.http.response import JsonResponse
 from django.shortcuts import render, HttpResponseRedirect
 from django.http import HttpResponse
 from django.utils import timezone
-from datetime import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta
 from itertools import groupby
 
 from admin_board_view.middleware import dashboard_authenticated, dashboard_admin

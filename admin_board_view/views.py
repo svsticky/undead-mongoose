@@ -22,7 +22,7 @@ def index(request):
     if request.user.is_superuser:
         product_amount = Product.objects.count()
         total_balance = sum(user.balance for user in User.objects.all())
-        product_sales = ProductTransactions.objects.prefetch_related('transaction_id').order_by('transaction_id__date').reverse()
+        product_sales = ProductTransactions.objects.filter(transaction_id__in=SaleTransaction.objects.all()).filter(status=TransactionType.SALE).prefetch_related('transaction_id').order_by('transaction_id__date').reverse()
         product_sale_groups = []
         for designation, member_group in groupby(product_sales, lambda sale: sale.transaction_id):
             product_sale_groups.append({"key": designation, "values": list(member_group)})
@@ -44,7 +44,7 @@ def index(request):
 
         # Get product sales
         product_sales = list(
-            ProductTransactions.objects.all().filter(transaction_id__user_id=user)
+            ProductTransactions.objects.filter(transaction_id__in=SaleTransaction.objects.all(), transaction_id__user_id=user)
         )
         product_sale_groups = []
         for designation, member_group in groupby(
@@ -326,7 +326,12 @@ def transactions(request):
 
     product_sale_groups = []
     for designation, member_group in groupby(product_sales, lambda sale: sale.transaction_id):
-        product_sale_groups.append({"key": designation, "values": list(member_group)})
+        member_group = list(member_group)
+        product_sale_groups.append({
+            "key": designation,
+            "values": member_group,
+            "transaction_type": TransactionType(member_group[0].status).label
+        })
 
     # Get paginators
     top_up_page = create_paginator(
@@ -471,3 +476,79 @@ def export_sale_transactions(request):
             "Something went wrong whilst trying to export the sale transactions.",
             status=400,
         )
+
+@dashboard_authenticated
+def mutations(request):
+    if request.user.is_superuser:
+        # Get the total number of products and total balance
+        product_amount = Product.objects.count()
+        total_balance = sum(user.balance for user in User.objects.all())
+        
+        # Filter transactions by status ('Sale' in this case)
+        product_sales = ProductTransactions.objects.filter(status=TransactionType.SALE).prefetch_related('transaction_id').order_by('transaction_id__date').reverse()
+
+        # Group sales by transaction
+        product_sale_groups = []
+        for designation, member_group in groupby(product_sales, lambda sale: sale.transaction_id):
+            product_sale_groups.append({"key": designation, "values": list(member_group)})
+        
+        # Paginate the sales groups
+        sales_page = create_paginator(product_sale_groups[:5], request.GET.get("sales"))
+
+        # Exclude 'SALE' from mutation_types
+        available_mutation_types = [mutation for mutation in ProductTransactions._meta.get_field('status').choices if mutation[0] != TransactionType.SALE]
+
+        # Render the template with the necessary context
+        return render(
+            request,
+            "mutations.html",
+            {
+                "users": User.objects.all(),
+                "product_amount": product_amount,
+                "sales": sales_page,
+                "total_balance": total_balance,
+                "top_types": top_up_types,  # Assuming you have top_up_types defined elsewhere
+                "products": Product.objects.all(),
+                "mutation_types": available_mutation_types,
+            },
+        )
+
+    
+@dashboard_admin
+def mutate(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "Invalid request method"}, status=400)
+
+    try:
+        data = json.loads(request.body)  # JSON payload uitlezen
+
+        mutation_type = data.get("mutation_type")
+        products = data.get("products")
+
+        if not mutation_type or not products:
+            return JsonResponse({"error": "Missing data"}, status=400)
+
+        transaction = SaleTransaction.objects.create(
+            user_id=User.objects.get(id=request.user.id),
+            transaction_sum=0
+        )
+
+        total_sum = 0
+        for product in products:
+            product_obj = Product.objects.get(id=product["id"])  # Check of product bestaat
+            # ProductTransaction aanmaken
+            ProductTransactions.objects.create(
+                product_id=product_obj,  # Correctly assign the Product object
+                transaction_id=transaction,
+                product_price=product_obj.price,
+                product_vat=product_obj.vat.id,
+                amount=int(product["amount"]),
+                status=mutation_type
+            )
+            total_sum += int(product["amount"]) * product_obj.price
+
+        transaction.transaction_sum = total_sum
+        transaction.save()
+        return JsonResponse({"success": True, "msg": "Mutation saved successfully!"})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)

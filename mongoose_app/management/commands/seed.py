@@ -1,12 +1,13 @@
 from django.core.management.base import BaseCommand
 from django.utils.timezone import make_aware
 from datetime import datetime, timedelta
-from random import randint, seed as randseed
+from random import choice, randint, seed as randseed
 from faker import Faker
 from faker.providers import misc, color, company, person, barcode
 from decimal import Decimal
 from mongoose_app.models import (
     Configuration,
+    TransactionType,
     User,
     Card,
     CardConfirmation,
@@ -19,7 +20,7 @@ from mongoose_app.models import (
     VAT,
     PaymentStatus,
 )
-
+from django.db import connection
 
 class Command(BaseCommand):
     help = "Seed the database"
@@ -33,6 +34,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.remove_data()
         self.seed(options["seed"])
+        self.reset_sequences()
 
     def remove_data(self):
         models = [
@@ -65,10 +67,9 @@ class Command(BaseCommand):
 
         # Configuration
         Configuration().save()
-
         print("Created 1 Configuration")
 
-        # Users
+        # mock Users
         users = [
             User(
                 user_id,
@@ -78,14 +79,31 @@ class Command(BaseCommand):
                 faker.email(),
                 Decimal(0),
             )
-            for user_id in range(20)
+            for user_id in range(3, 21) # 1 and 2 are dev and test
         ]
+
+        dev_user = User(
+            id=1,
+            user_id=1,
+            name="Gebruikerus Besturus",
+            birthday=faker.date_of_birth(minimum_age=15, maximum_age=28),
+            email="dev@svsticky.nl",
+            balance=Decimal(0),
+        )
+        dev_user.save()
+
+        test_user = User(
+            id=2,
+            user_id=2,
+            name="Gebruikerus Normalus",
+            birthday=faker.date_of_birth(minimum_age=15, maximum_age=28),
+            email="test@svsticky.nl",
+            balance=Decimal(0),
+        )
+        test_user.save()
+
         for user in users:
             user.save()
-
-        test_user = randelem(users)
-        test_user.email = "test@svsticky.nl"
-        test_user.save()
 
         print(f"Created {len(users)} Users")
 
@@ -247,6 +265,7 @@ class Command(BaseCommand):
                     sale_trans.save()
                     sale_trans_id += 1
 
+                    status = choice(list(TransactionType))
                     # Products in the cart are evenly divided into sale transactions
                     for amount, product in cart_slice:
                         prod_trans = ProductTransactions(
@@ -256,17 +275,45 @@ class Command(BaseCommand):
                             product.price,
                             product.vat.percentage,
                             amount,
+                            status
                         )
                         prod_trans_id += 1
                         prod_trans.save()
 
                 cart_total = sum(amount * product.price for amount, product in cart)
                 print(
-                    f"Created {num_sale_trans} SaleTransaction and {len(cart)} ProductTransactions totalling €{cart_total}"
+                    f"Created {num_sale_trans} SaleTransaction and {len(cart)} ProductTransactions totalling €{cart_total} with status {status}"
                 )
 
         print(f"Created {trans_count} TopUp- and IDealTransactions")
         print(f"Created {prod_trans_id} Sale- and ProductTransactions")
+
+    def reset_sequences(self):
+        with connection.cursor() as cursor:
+            for model in [
+                Card, 
+                CardConfirmation, 
+                TopUpTransaction, 
+                SaleTransaction, 
+                ProductTransactions, 
+                Product, 
+                Category, 
+                VAT, 
+                User, 
+                Configuration
+            ]:
+                sequence_name = f"{model._meta.db_table}_id_seq"
+                try:
+                    cursor.execute(f"""
+                        SELECT setval(
+                            '{sequence_name}', 
+                            COALESCE((SELECT MAX(id) FROM {model._meta.db_table}), 1) + 1, 
+                            false
+                        )
+                    """)
+                    print(f"Reset sequence for {model._meta.db_table} to the max ID value + 1.")
+                except Exception as e:
+                    print(f"Failed to reset sequence for {model._meta.db_table}: {e}")
 
 
 def randprice(start, end):

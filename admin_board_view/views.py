@@ -361,8 +361,9 @@ def salesInfo(request):
     to_date_str = request.GET.get('to_date', default_to_date.strftime('%Y-%m-%d'))
 
     # Ensure the dates are timezone-aware
-    from_date = timezone.make_aware(datetime.strptime(from_date_str, '%Y-%m-%d'))
-    to_date = timezone.make_aware(datetime.strptime(to_date_str, '%Y-%m-%d'))
+    # Cap date at '9999-12-31'
+    from_date = timezone.make_aware(datetime.strptime(from_date_str if int(from_date_str.split('-')[0]) <= 9999 else '9999-12-31', '%Y-%m-%d'))
+    to_date = timezone.make_aware(datetime.strptime(to_date_str if int(to_date_str.split('-')[0]) <= 9999 else '9999-12-31','%Y-%m-%d'))
 
     sort_order = request.GET.get('sort_order', 'descending')
     ordering = 'total_amount' if sort_order == 'ascending' else '-total_amount'

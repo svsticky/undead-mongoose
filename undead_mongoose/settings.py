@@ -36,6 +36,8 @@ INSTALLED_APPS = [
     "admin_board_view",
     "mongoose_app.apps.CustomConstance",
     "constance.backends.database",
+    "rest_framework",
+    "drf_yasg",
 ]
 
 MIDDLEWARE = [

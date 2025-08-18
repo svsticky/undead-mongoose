@@ -5,7 +5,7 @@ dependencies = [
   "cffi==1.17.1",
   "charset-normalizer==3.4.0",
   "cryptography==44.0.0",
-  "Django==4.0",
+  "django==4.0",
   "django-constance==2.8.0",
   "django-environ==0.11.2",
   "django-picklefield==3.2",
@@ -26,6 +26,12 @@ dependencies = [
   "mollie-api-python>=3.7.4",
   "gunicorn",
   "faker>=35.2.0",
+  "djangorestframework>=3.15.1",
+  "drf-yasg>=1.21.8",
+  "inflection>=0.5.1",
+  "pytz>=2025.1",
+  "pyyaml>=6.0.2",
+  "uritemplate>=4.1.1",
 ]
 name = "undead-mongoose"
 version = "1.0.0"

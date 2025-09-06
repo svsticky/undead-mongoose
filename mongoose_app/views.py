@@ -35,8 +35,11 @@ import secrets
 
 
 # GET endpoints
+@require_http_methods(["GET", "DELETE"])
+def card(request):
+    return get_card(request) if request.method == "GET" else delete_card(request)
+
 @authenticated
-@require_http_methods(["GET"])
 def get_card(request):
     """
     Should:
@@ -48,9 +51,38 @@ def get_card(request):
         card = Card.objects.filter(card_id=card_uuid, active=True).first()
         if card is None:
             return HttpResponse(status=404)
+
+        card.last_used = timezone.now()
+        card.save()
+
         user = card.user_id
         return JsonResponse(user.serialize(), safe=False)
     return HttpResponse(status=400)
+
+@dashboard_authenticated
+def delete_card(request):
+    """
+    Expects:
+    - a session
+    - card uuid in GET params
+    Should:
+    - Check if the card belongs to the user or the user is an admin
+    - Delete the card from the database
+    """
+
+    print("Deleting card")
+    
+    card_uuid = request.GET.get("uuid")
+    card = Card.objects.filter(card_id = card_uuid, active=True).first()
+    if card is None:
+        return HttpResponse("Unknown card uuid", status=404)
+
+    card_user: User = card.user_id
+    if request.user.is_superuser or card_user.email == request.user.email:
+        card.delete()
+        return HttpResponse(status=200)
+
+    return HttpResponse("Card owner and session user do not match", status=403)
 
 
 @authenticated

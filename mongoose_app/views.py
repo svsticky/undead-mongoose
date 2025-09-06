@@ -69,9 +69,6 @@ def delete_card(request):
     - Check if the card belongs to the user or the user is an admin
     - Delete the card from the database
     """
-
-    print("Deleting card")
-    
     card_uuid = request.GET.get("uuid")
     card = Card.objects.filter(card_id = card_uuid, active=True).first()
     if card is None:

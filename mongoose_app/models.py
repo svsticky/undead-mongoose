@@ -264,6 +264,7 @@ class Card(models.Model):
         "User",
         on_delete=models.CASCADE,
     )
+    last_used = models.DateTimeField(null=True, blank=True)
 
 
 class CardConfirmation(models.Model):

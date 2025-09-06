@@ -84,6 +84,9 @@ def index(request):
             key=lambda transaction: transaction[0], reverse=True
         )
         top_up_page = create_paginator(all_top_ups, request.GET.get("top_ups"))
+
+        cards = Card.objects.filter(user_id__pk = user.pk)
+
         return render(
             request,
             "user_home.html",
@@ -96,6 +99,7 @@ def index(request):
                 "PaymentStatus": PaymentStatus,
                 "TRANSACTION_FEE": settings.TRANSACTION_FEE,
                 "error": request.GET.get("error"),
+                "cards": cards
             },
         )
 

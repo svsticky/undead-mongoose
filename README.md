@@ -12,10 +12,11 @@ Django application for the mongoose backend & board interface.
   uv sync
   ```
 
-  While installing packages, you might run into the error that pg_config cannot be found. One way of solving this is installing development libraries for postgres. This differs per operating system, but on debian/ubuntu the following commands should fix the error
+  While installing packages, you might run into the error that pg_config cannot be found. One way of solving this is installing development libraries for postgres. This differs per operating system, but commands along the following should fix the error:
 
   ```bash
-  sudo apt update && sudo apt install libpq-dev -y
+  sudo apt update && sudo apt install libpq-dev -y # On debian/ubuntu
+  brew install postgresql@14 # On macos with homebrew
   ```
 - During development you need [docker](https://www.docker.com/) installed to get a postgres database up and runnning.
 

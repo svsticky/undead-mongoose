@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load static %}
+{% block body %}
+<h1>Mutations</h1>
+<hr/>
+<div class="undead-cols row row-cols-2">
+  <div class="col">
+    <div class="card">
+      <h5 class="card-header">Add product mutation</h5>
+      <div class="card-body">
+        <input class="form-control mb-3" list="productOptions" id="product" placeholder="Search product...">
+        <datalist id="productOptions">
+          {% for product in products %}
+            <option id="{{ product.id }}" value="{{ product.name }}">
+          {% endfor %}
+        </datalist>
+        <input type="number" class="form-control mb-3" id="amount" placeholder="Amount" min="1" max="1000">
+        <button class="btn btn-primary" id="add-product" onclick="addProduct()">Toevoegen</button>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="card mt-2">
+      <h5 class="card-header">Selected Products</h5>
+      <div class="card-body">
+        <ul id="selected-products" class="list-group"></ul>
+        <hr/>
+        <select class="form-select" id="mutation-type">
+          <option value="" disabled selected>Select a mutation type</option>
+          {% for value, label in mutation_types %}
+            <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+        </select>        
+        </select>
+        <div class="btn-group d-flex mt-3">
+          <button class="btn btn-danger" id="cancel-mutation" onclick="cancelMutation()">Cancel</button>
+          <button class="btn btn-success" id="confirm-mutation" onclick="confirmMutation(event)">Bevestigen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Success and error message modal -->
+<div class="modal fade" id="message-modal" tabindex="-1" aria-labelledby="message-modal-label" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="message-modal-label">Message</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="modal-message-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript" src="{% static 'AdminBoardView/mutations.js' %}" defer></script>
+{% endblock %}

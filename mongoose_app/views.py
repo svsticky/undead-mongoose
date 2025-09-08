@@ -82,6 +82,23 @@ def delete_card(request):
     return HttpResponse("Card owner and session user do not match", status=403)
 
 
+def change_card_name(request):
+    if "card_uuid" in request.GET:
+        card_uuid = request.GET.get("card_uuid")
+        card = Card.objects.filter(card_id=card_uuid, active=True).first()
+        if card is None:
+            return HttpResponse(status=404)
+
+        card_user: User = card.user_id
+        if "name" in request.GET and (request.user.is_superuser or card_user.email == request.user.email):
+            card.card_name = request.GET.get("name")
+            card.save()
+
+        user = card.user_id
+        return JsonResponse(user.serialize(), safe=False)
+    return HttpResponse(status=400)
+
+
 @authenticated
 @require_http_methods(["GET"])
 def get_products(request):

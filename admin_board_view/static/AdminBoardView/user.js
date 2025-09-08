@@ -60,7 +60,20 @@ edit_buttons.forEach(btn => {
     save.addEventListener("click", () => {
       td.innerHTML = input.value;
 
-      // do something with input.value
+      $.ajax({
+        url: `/api/cardname?card_uuid=${uuid}&name=${input.value}`,
+        type: "POST",
+        beforeSend: function(xhr) {
+          xhr.setRequestHeader("X-CSRFToken", csrf_token);
+        },
+        success: (response) => {
+          showToast("Renamed card", response);
+        }, 
+        error: (response) => {
+          console.log(response);
+          showToast("Card renaming failed", response.response);
+        }
+      });
 
       par.removeChild(save);
       par.appendChild(btn);

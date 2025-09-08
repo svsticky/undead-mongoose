@@ -105,7 +105,7 @@ class Command(BaseCommand):
 
             for _ in range(num_cards):
                 active = randint(0, 9) != 0
-                card = Card(card_id, faker.ean(length=8), active, user.id)
+                card = Card(card_id, faker.ean(length=8), None, active, user.id)
                 card.save()
                 cards.append(card)
                 card_id += 1

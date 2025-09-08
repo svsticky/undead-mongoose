@@ -36,3 +36,35 @@ delete_buttons.forEach(btn => {
     });
   })
 });
+
+const edit_buttons = Array.from(document.getElementsByClassName("edit-card"));
+edit_buttons.forEach(btn => {
+  btn.addEventListener("click", () => {
+    const uuid = btn.parentElement.parentElement.getAttribute("data-card-uuid");
+    const td = document.querySelector(`tr[data-card-uuid="${uuid}"]`).querySelector(".edit-td");
+    const card_name = td.getAttribute("card_name");
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = card_name;
+    input.style.maxWidth = "70px";
+
+    td.innerHTML = "";
+    td.appendChild(input);
+
+    const par = btn.parentElement;
+    par.removeChild(btn);
+    const save = document.createElement("button");
+    save.appendChild(document.createTextNode("Save"));
+    save.className = "btn btn-success save-card";
+    save.addEventListener("click", () => {
+      td.innerHTML = input.value;
+
+      // do something with input.value
+
+      par.removeChild(save);
+      par.appendChild(btn);
+    })
+    par.appendChild(save);
+  });
+});

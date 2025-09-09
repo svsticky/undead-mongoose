@@ -110,6 +110,7 @@ class Command(BaseCommand):
             for _ in range(num_cards):
                 active = randint(0, 9) != 0
                 name = faker.card_name()
+
                 card = Card(card_id, faker.ean(length=8), name, active, user.id)
                 card.save()
                 cards.append(card)
@@ -117,9 +118,12 @@ class Command(BaseCommand):
 
                 if active:
                     three_years_ago = datetime.now() - timedelta(days=3 * 365)
-                    date = make_aware(faker.date_time_between(three_years_ago))
+                    activation_date = make_aware(faker.date_time_between(three_years_ago))
+                    last_used_date = make_aware(faker.date_time_between(three_years_ago))
+                    card.last_used = last_used_date
+                    card.save()
                     confirmation = CardConfirmation(
-                        confirmation_id, date, card.id, faker.password(length=32)
+                        confirmation_id, activation_date, card.id, faker.password(length=32)
                     )
                     confirmation.save()
                     confirmation_id += 1

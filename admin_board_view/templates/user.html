@@ -39,15 +39,20 @@
           <thead>
             <tr>
               <th>Card ID</th>
+              <th>Card Name</th>
               <th>Active</th>
+              <th>Last Used</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {% for card in cards %}
-            <tr>
+            <tr data-card-uuid="{{ card.info.card_id }}">
               <td>{{ card.info.card_id }}</td>
+              <td class="edit-td" card_name="{{ card.info.card_name }}">{{ card.info.card_name }}</td>
               <td>{{ card.info.active }}</td>
+              <td>{{ card.info.last_used }}</td>
+              <td><button class="btn btn-primary edit-card">Edit</button></td>
               <td>
                 {% if not card.info.active %}
                   <button class="btn btn-warning activate-card" id="{{ card.token }}">Activate</button>

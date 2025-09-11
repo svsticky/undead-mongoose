@@ -52,7 +52,7 @@
                 {% if not card.info.active %}
                   <button class="btn btn-warning activate-card" id="{{ card.token }}">Activate</button>
                 {% endif %}
-                <button class="btn btn-danger">Delete</button>
+                <button class="btn btn-danger delete-card" data-card-uuid="{{ card.card_id }}">Delete</button>
               </td>
             </tr>
             {% endfor %}

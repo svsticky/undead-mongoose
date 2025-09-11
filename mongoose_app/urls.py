@@ -4,7 +4,7 @@ from . import views
 
 urlpatterns = [
     # GET endpoints
-    path("card", views.get_card, name="get_card"),
+    path("card", views.card, name="card"),
     path("products", views.get_products, name="get_products"),
     path("confirm", views.confirm_card, name="confirm_card"),
     # POST endpoints

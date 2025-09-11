@@ -43,6 +43,7 @@
               <th>Active</th>
               <th>Last Used</th>
               <th></th>
+              <th>Actions</th>
               <th></th>
             </tr>
           </thead>
@@ -56,9 +57,12 @@
               {% if not card.info.active %}
                 <td><button class="btn btn-primary disabled edit-card">Edit</button></td>
                 <td><button class="btn btn-warning activate-card" id="{{ card.token }}">Activate</button></td>
+                <td><button class="btn btn-danger delete-card" data-card-uuid="{{ card.card_id }}">Delete</button></td>
+              {% else %}
+                <td><button class="btn btn-primary edit-card">Edit</button></td>
+                <td><button class="btn btn-danger delete-card" data-card-uuid="{{ card.card_id }}">Delete</button></td>
+                <td></td>
               {% endif %}
-              <td><button class="btn btn-primary edit-card">Edit</button></td>
-              <td><button class="btn btn-danger delete-card" data-card-uuid="{{ card.card_id }}">Delete</button></td>
             </tr>
             {% endfor %}
           </tbody>

@@ -39,21 +39,30 @@
           <thead>
             <tr>
               <th>Card ID</th>
+              <th>Card Name</th>
               <th>Active</th>
+              <th>Last Used</th>
+              <th></th>
               <th>Actions</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
             {% for card in cards %}
-            <tr>
+            <tr data-card-uuid="{{ card.info.card_id }}">
               <td>{{ card.info.card_id }}</td>
+              <td class="edit-td" card_name="{{ card.info.card_name }}">{{ card.info.card_name }}</td>
               <td>{{ card.info.active }}</td>
-              <td>
-                {% if not card.info.active %}
-                  <button class="btn btn-warning activate-card" id="{{ card.token }}">Activate</button>
-                {% endif %}
-                <button class="btn btn-danger delete-card" data-card-uuid="{{ card.card_id }}">Delete</button>
-              </td>
+              <td>{{ card.info.last_used }}</td>
+              {% if not card.info.active %}
+                <td><button class="btn btn-primary disabled edit-card">Edit</button></td>
+                <td><button class="btn btn-warning activate-card" id="{{ card.token }}">Activate</button></td>
+                <td><button class="btn btn-danger delete-card" data-card-uuid="{{ card.card_id }}">Delete</button></td>
+              {% else %}
+                <td><button class="btn btn-primary edit-card">Edit</button></td>
+                <td><button class="btn btn-danger delete-card" data-card-uuid="{{ card.card_id }}">Delete</button></td>
+                <td></td>
+              {% endif %}
             </tr>
             {% endfor %}
           </tbody>

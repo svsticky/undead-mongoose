@@ -3,7 +3,7 @@ from django.utils.timezone import make_aware
 from datetime import datetime, timedelta
 from random import randint, seed as randseed
 from faker import Faker
-from faker.providers import misc, color, company, person, barcode
+from faker.providers import misc, color, company, person, barcode, DynamicProvider
 from decimal import Decimal
 from mongoose_app.models import (
     Configuration,
@@ -57,7 +57,11 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(s))
 
         faker = Faker("nl_NL")
-        for provider in [misc, color, company, person, barcode]:
+        card_names_provider = DynamicProvider(
+            provider_name="card_name",
+            elements=["OV-Chipkaart","Bestuur Bankpas","UU Medewerkerspas","Chipsoft waterfles"]
+        )
+        for provider in [misc, color, company, person, barcode, card_names_provider]:
             faker.add_provider(provider)
         if seed:
             faker.seed_instance(seed)
@@ -105,16 +109,20 @@ class Command(BaseCommand):
 
             for _ in range(num_cards):
                 active = randint(0, 9) != 0
-                card = Card(card_id, faker.ean(length=8), active, user.id)
+                name = faker.card_name()
+
+                card = Card(card_id, faker.ean(length=8), name, active, user.id)
                 card.save()
                 cards.append(card)
                 card_id += 1
 
                 if active:
                     three_years_ago = datetime.now() - timedelta(days=3 * 365)
-                    date = make_aware(faker.date_time_between(three_years_ago))
+                    activation_date = make_aware(faker.date_time_between(three_years_ago))
+                    card.last_used = make_aware(faker.date_time_between(activation_date))
+                    card.save()
                     confirmation = CardConfirmation(
-                        confirmation_id, date, card.id, faker.password(length=32)
+                        confirmation_id, activation_date, card.id, faker.password(length=32)
                     )
                     confirmation.save()
                     confirmation_id += 1

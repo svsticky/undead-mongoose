@@ -81,6 +81,28 @@ def delete_card(request):
 
     return HttpResponse("Card owner and session user do not match", status=403)
 
+@dashboard_authenticated
+def change_card_name(request):
+    """
+    - Check if card exists and belongs to the user (or user is an admin)
+    - Update card name to new card name
+    """
+    if "card_uuid" in request.GET:
+        # Get card info, check if card exists
+        card_uuid = request.GET.get("card_uuid")
+        card = Card.objects.filter(card_id=card_uuid, active=True).first()
+        if card is None:
+            return HttpResponse(status=404)
+
+        # Check if card belongs to user or user is admin
+        card_user: User = card.user_id
+        if "name" in request.GET and (request.user.is_superuser or card_user.email == request.user.email):
+            # Update card name
+            card.card_name = request.GET.get("name")
+            card.save()
+
+        return HttpResponse(status=200)
+    return HttpResponse(status=400)
 
 @authenticated
 @require_http_methods(["GET"])

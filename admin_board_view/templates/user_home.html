@@ -114,15 +114,19 @@
             <thead>
               <tr>
                 <th>ID</th>
+                <th>Name</th>
                 <th>Last used</th>
+                <th></th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
               {% for card in cards %}
-                <tr>
+                <tr data-card-uuid="{{ card.card_id }}">
                   <td>{{ card.card_id }}</td>
+                  <td class="edit-td" card_name="{{ card.card_name }}">{{ card.card_name }}</td>
                   <td>{{ card.last_used }}</td>
+                  <td><button class="btn btn-primary edit-card">Edit</button></td>
                   <td><button class="btn btn-danger delete-card" data-card-uuid="{{ card.card_id }}">Delete</button></td>
                 </tr>
               {% endfor %}

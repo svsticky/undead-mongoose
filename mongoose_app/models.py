@@ -259,6 +259,7 @@ class User(models.Model):
 
 class Card(models.Model):
     card_id = models.CharField(max_length=8)
+    card_name = models.CharField(null=True, blank=True, max_length=32)
     active = models.BooleanField()
     user_id = models.ForeignKey(
         "User",

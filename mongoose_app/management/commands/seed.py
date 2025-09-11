@@ -119,8 +119,7 @@ class Command(BaseCommand):
                 if active:
                     three_years_ago = datetime.now() - timedelta(days=3 * 365)
                     activation_date = make_aware(faker.date_time_between(three_years_ago))
-                    last_used_date = make_aware(faker.date_time_between(three_years_ago))
-                    card.last_used = last_used_date
+                    card.last_used = make_aware(faker.date_time_between(activation_date))
                     card.save()
                     confirmation = CardConfirmation(
                         confirmation_id, activation_date, card.id, faker.password(length=32)

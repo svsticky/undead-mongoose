@@ -81,7 +81,6 @@ def delete_card(request):
 
     return HttpResponse("Card owner and session user do not match", status=403)
 
-
 def change_card_name(request):
     """
     - Check if card exists and belongs to the user (or user is an admin)
@@ -103,7 +102,6 @@ def change_card_name(request):
 
         return HttpResponse(status=200)
     return HttpResponse(status=400)
-
 
 @authenticated
 @require_http_methods(["GET"])

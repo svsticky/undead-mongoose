@@ -104,7 +104,6 @@ def change_card_name(request):
         return HttpResponse(status=200)
     return HttpResponse(status=400)
 
-
 @authenticated
 @require_http_methods(["GET"])
 def get_products(request):

@@ -187,6 +187,13 @@ if (window.location.pathname.includes("transactions")) {
       top_ups.classList.add("show");
       top_ups.classList.add("active");
     }
+  } else if (window.location.search.includes("ideal")) {
+    const ideals = document.getElementById("ideal");
+    if (ideals) {
+      document.getElementById("ideal-tab").classList.add("active");
+      ideals.classList.add("show");
+      ideals.classList.add("active");
+    }
   } else {
     const sales = document.getElementById("sales");
     if (sales) {

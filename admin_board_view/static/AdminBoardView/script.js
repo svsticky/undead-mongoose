@@ -58,7 +58,7 @@ if (showUser) {
     const user_options = document.getElementById("userOptions");
     const selected_user = user_options.querySelector(`[value='${escapedName}']`);
     if (!selected_user) {
-      showToast("Show user - Failed", "User not found");
+      window.location = `/users?name=${name}`;
     } else {
       const userId = selected_user.id;
       window.location = `/users/${userId}`;

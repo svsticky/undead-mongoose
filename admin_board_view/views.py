@@ -236,7 +236,11 @@ def users(request, user_id=None):
 @dashboard_admin
 def settings_page(request):
     vat = VAT.objects.all()
-    categories = Category.objects.all()
+    categories = list(Category.objects.all())
+    categories.sort(key=lambda cat: cat.order)
+
+    print(categories)
+    print(list(map(lambda it: it.order, categories)))
     configuration = Configuration.objects.all()[0]
     return render(
         request,
@@ -250,18 +254,20 @@ def category(request):
     try:
         categories = json.loads(request.POST.dict()["categories"])
         for category in categories:
-            if category["id"] == "0":
-                cat = Category.objects.create(
-                    name=category["name"], alcoholic=category["checked"]
-                )
-                cat.save()
-            elif "delete" in category and category["delete"] is True:
+
+            if category.get("delete"):
                 cat = Category.objects.get(id=category["id"])
                 cat.delete()
+            elif category["id"] == "-1": # -1 signifies a new category
+                cat = Category.objects.create(
+                    name=category["name"], alcoholic=category["checked"], order=category["order"]
+                )
+                cat.save()
             else:
                 cat = Category.objects.get(id=category["id"])
                 cat.name = category["name"]
                 cat.alcoholic = category["checked"]
+                cat.order = category["order"]
                 cat.save()
 
         return JsonResponse({"msg": "Updated the mongoose categories"})

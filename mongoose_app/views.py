@@ -132,7 +132,7 @@ def get_products(request):
 
     serialized_categories = [c.serialize() for c in categories]
 
-    user_favorites = user.favorites.all() 
+    user_favorites = user.favorites.filter(enabled=True)
     
     if user_favorites.exists():
         fav_category = {

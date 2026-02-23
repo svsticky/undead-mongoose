@@ -239,8 +239,6 @@ def settings_page(request):
     categories = list(Category.objects.all())
     categories.sort(key=lambda cat: cat.order)
 
-    print(categories)
-    print(list(map(lambda it: it.order, categories)))
     configuration = Configuration.objects.all()[0]
     return render(
         request,

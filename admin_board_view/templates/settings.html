@@ -18,7 +18,7 @@
           </thead>
           <tbody id="categories">
             <tr id="template-category-item" class="hidden-item">
-              <td><input class="form-control" type="text" value={{ category.name }}></td>
+              <td><input class="form-control" type="text" value="{{ category.name }}"></td>
               <td><input type="checkbox" {% if category.alcoholic %}checked{% endif %}></td>
               <td><button class="btn btn-danger delete-category" name="{{ category.id }}">Delete</button></td>
               <td class="handle">
@@ -27,7 +27,7 @@
             </tr>
             {% for category in categories %}
               <tr class="category-item" id="{{ category.id }}">
-                <td><input class="form-control" type="text" value={{ category.name }}></td>
+                <td><input class="form-control" type="text" value="{{ category.name }}"></td>
                 <td><input type="checkbox" {% if category.alcoholic %}checked{% endif %}></td>
                 <td><button class="btn btn-danger delete-category" name="{{ category.id }}">Delete</button></td>
                 <!-- <td>{{ category.order }}</td> -->

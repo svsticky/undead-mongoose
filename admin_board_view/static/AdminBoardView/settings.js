@@ -45,6 +45,7 @@ if (updateCategories) {
       type: "post"
     }).then(response => {
       showToast("Update category result", response.msg);
+      window.location.reload(true); // Reload without cache, avoids issues when reordering
     });
   });
 }

@@ -131,6 +131,16 @@ def get_products(request):
         categories = Category.objects.filter(alcoholic=False)
 
     serialized_categories = [c.serialize() for c in categories]
+
+    user_favorites = user.favorites.all() 
+    
+    if user_favorites.exists():
+        fav_category = {
+            "name": "⭐",
+            "products": [p.serialize() for p in user_favorites]
+        }
+        serialized_categories.insert(0, fav_category)
+
     return JsonResponse(serialized_categories, safe=False)
 
 
@@ -444,3 +454,38 @@ def payment_webhook(request):
     transaction.save()
 
     return HttpResponse(status=200)
+
+@csrf_exempt
+@authenticated
+@require_http_methods(["POST"])
+def toggle_favorite(request):
+    """
+    Toggles a product in the user's favorites list.
+    Expects a JSON body with 'uuid' (card identifier) and 'product_id'.
+    If the product is already a favorite, it is removed; otherwise, it is added.
+    """
+    try:
+        body = json.loads(request.body.decode("utf-8"))
+        product_id = body.get("product_id")
+        card_id = body.get("uuid")
+    except (json.decoder.JSONDecodeError, KeyError):
+        return HttpResponse(status=400)
+
+    card = Card.objects.filter(card_id=card_id).first()
+    if not card:
+        return HttpResponse("Card not found", status=404)
+    
+    user = card.user_id
+    
+    product = Product.objects.filter(id=product_id).first()
+    if not product:
+        return HttpResponse("Product not found", status=404)
+
+    if product in user.favorites.all():
+        user.favorites.remove(product)
+        status = "removed"
+    else:
+        user.favorites.add(product)
+        status = "added"
+
+    return JsonResponse({"status": status, "product_id": product_id}, status=200)

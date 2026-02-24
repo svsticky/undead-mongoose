@@ -242,6 +242,11 @@ class User(models.Model):
     balance = models.DecimalField(
         decimal_places=2, max_digits=6, default=Decimal("0.00")
     )
+    favorites = models.ManyToManyField(
+        "Product", 
+        blank=True, 
+        related_name="favorited_by"
+    )
 
     def __str__(self):
         return self.name

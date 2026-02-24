@@ -15,4 +15,5 @@ urlpatterns = [
     path("topup", views.topup, name="topup"),
     path("payment/webhook", views.payment_webhook, name="payment_webhook"),
     path("cardname", views.change_card_name, name="change_card_name"),
+    path("favorite/toggle", views.toggle_favorite, name="toggle_favorite"),
 ]

@@ -67,7 +67,13 @@ class Product(models.Model):
     def serialize(self) -> dict:
         url = settings.BASE_URL + self.image.url if self.image else None
         return {"id": self.id, "name": self.name, "price": self.price, "image_url": url}
-
+class TransactionType(models.IntegerChoices):
+    SALE = 1, "SALE"
+    RODENTS = 2, "RODENTS"
+    SPOILED = 3, "SPOILED"
+    RECOUNT = 4, "RECOUNT"
+    BROKEN = 5, "BROKEN"
+    OTHER = 6, "OTHER"
 
 class ProductTransactions(models.Model):
     product_id = models.ForeignKey(
@@ -81,6 +87,8 @@ class ProductTransactions(models.Model):
     product_price = models.DecimalField(decimal_places=2, max_digits=6)
     product_vat = models.IntegerField()
     amount = models.IntegerField()
+    status = models.IntegerField( choices=TransactionType.choices, 
+                                  default=TransactionType.SALE )
 
     def show_vat(self):
         return str(self.product_vat) + "%"

@@ -54,6 +54,7 @@
             <tr>
               <th>User</th>
               <th>Date</th>
+              <th>Transaction type</th>
               <th>Transaction sum</th>
               <th>Products</th>
             </tr>
@@ -63,6 +64,7 @@
               <tr id="{{ transaction.key.id }}">
                 <td><a href="/users/{{ transaction.key.user_id.id }}">{{ transaction.key.user_id.name }}</a></td>
                 <td>{{ transaction.key.date|timezone:"Europe/Amsterdam"|date:"F j, Y, H:i:s" }}</td>
+                <td>{{ transaction.transaction_type }}</td>
                 <td>€{{ transaction.key.transaction_sum }}</td>
                 <td>
                   {% for product in transaction.values %}

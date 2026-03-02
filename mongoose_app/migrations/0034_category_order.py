@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('mongoose_app', '0032_card_card_name'),
+        ('mongoose_app', '0033_user_favorites'),
     ]
 
     operations = [

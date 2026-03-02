@@ -15,6 +15,7 @@ top_up_types = [(1, "Pin"), (2, "Credit card"), (3, "Mollie")]
 class Category(models.Model):
     name = models.CharField(max_length=30)
     alcoholic = models.BooleanField(default=False)
+    order = models.IntegerField(default=0)
 
     class Meta:
         verbose_name = "Category"
@@ -25,7 +26,7 @@ class Category(models.Model):
 
     def serialize(self) -> dict:
         products = Product.objects.filter(category=self, enabled=True)
-        return {"name": self.name, "products": [p.serialize() for p in products]}
+        return {"name": self.name, "products": [p.serialize() for p in products], "order": self.order}
 
 
 class Product(models.Model):

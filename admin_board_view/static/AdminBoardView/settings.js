@@ -5,10 +5,16 @@ if (addCategory) {
     const table = document.getElementById("categories");
     let template = document.getElementById("template-category-item").cloneNode(deep = true);
     template.classList = "category-item";
-    template.id = 0;
+    template.id = -1;
     table.appendChild(template)
   });
 }
+
+const cats = document.getElementById("categories");
+Sortable.create(cats, {
+  handle: '.handle',
+  animation: 150
+});
 
 // Update categories
 const updateCategories = document.getElementById("update-categories");
@@ -17,13 +23,15 @@ if (updateCategories) {
     let items = [];
 
     const categoryItems = Array.from(document.getElementsByClassName("category-item"));
-    categoryItems.forEach(category => {
+    categoryItems.forEach((category, i) => {
       let name = category.querySelector(".form-control").value.trim();
       if (name) {
+        console.log(name)
         items.push({
           "id": category.id,
           "name": name,
-          "checked": category.querySelector("input[type='checkbox']").checked
+          "checked": category.querySelector("input[type='checkbox']").checked,
+          "order": i
         });
       }
     });
@@ -37,6 +45,7 @@ if (updateCategories) {
       type: "post"
     }).then(response => {
       showToast("Update category result", response.msg);
+      window.location.reload(true); // Reload without cache, avoids issues when reordering
     });
   });
 }

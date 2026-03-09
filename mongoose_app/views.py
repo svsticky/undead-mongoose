@@ -124,22 +124,22 @@ def get_products(request):
     )
     alc_time = Configuration.objects.get(pk=1).alc_time
 
+    user_favorites = user.favorites.filter(enabled=True)
     now = timezone.localtime(timezone.now())
+
     if now.time() > alc_time and age > 17:
         categories = Category.objects.all()
     else:
         categories = Category.objects.filter(alcoholic=False)
+        user_favorites = user_favorites.filter(category__alcoholic=False)
 
     serialized_categories = [c.serialize() for c in categories]
-
-    user_favorites = user.favorites.filter(enabled=True)
     
-    if user_favorites.exists():
-        fav_category = {
-            "name": "⭐",
-            "products": [p.serialize() for p in user_favorites]
-        }
-        serialized_categories.insert(0, fav_category)
+    fav_category = {
+        "name": "⭐",
+        "products": [p.serialize() for p in user_favorites]
+    }
+    serialized_categories.insert(0, fav_category)
 
     return JsonResponse(serialized_categories, safe=False)
 

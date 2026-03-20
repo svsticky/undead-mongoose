@@ -239,7 +239,7 @@ def settings_page(request):
     categories = list(Category.objects.all())
     categories.sort(key=lambda cat: cat.order)
 
-    configuration = Configuration.objects.all()[0]
+    configuration = Configuration.objects.first()
     return render(
         request,
         "settings.html",
@@ -314,7 +314,7 @@ def settings_update(request):
         JsonResponse: A JSON response indicating whether the configuration settings were successfully updated or not.
     """
     try:
-        configuration = Configuration.objects.get(pk=1)
+        configuration = Configuration.objects.first()
         settings = json.loads(request.POST.dict()["settings"])
         configuration.alc_time = settings["alc_time"]
         configuration.save()

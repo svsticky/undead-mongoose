@@ -122,7 +122,7 @@ def get_products(request):
         - user.birthday.year
         - ((today.month, today.day) < (user.birthday.month, user.birthday.day))
     )
-    alc_time = Configuration.objects.get(pk=1).alc_time
+    alc_time = Configuration.objects.first().alc_time
 
     user_favorites = user.favorites.filter(enabled=True)
     now = timezone.localtime(timezone.now())

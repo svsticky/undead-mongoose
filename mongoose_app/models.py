@@ -15,6 +15,7 @@ top_up_types = [(1, "Pin"), (2, "Credit card"), (3, "Mollie")]
 class Category(models.Model):
     name = models.CharField(max_length=30)
     alcoholic = models.BooleanField(default=False)
+    order = models.IntegerField(default=0)
 
     class Meta:
         verbose_name = "Category"
@@ -25,7 +26,7 @@ class Category(models.Model):
 
     def serialize(self) -> dict:
         products = Product.objects.filter(category=self, enabled=True)
-        return {"name": self.name, "products": [p.serialize() for p in products]}
+        return {"name": self.name, "products": [p.serialize() for p in products], "order": self.order}
 
 
 class Product(models.Model):
@@ -241,6 +242,11 @@ class User(models.Model):
     email = models.EmailField(max_length=254, null=True, blank=True)
     balance = models.DecimalField(
         decimal_places=2, max_digits=6, default=Decimal("0.00")
+    )
+    favorites = models.ManyToManyField(
+        "Product", 
+        blank=True, 
+        related_name="favorited_by"
     )
 
     def __str__(self):

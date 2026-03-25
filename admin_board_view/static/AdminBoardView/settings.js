@@ -5,10 +5,16 @@ if (addCategory) {
     const table = document.getElementById("categories");
     let template = document.getElementById("template-category-item").cloneNode(deep = true);
     template.classList = "category-item";
-    template.id = 0;
+    template.id = -1;
     table.appendChild(template)
   });
 }
+
+const cats = document.getElementById("categories");
+Sortable.create(cats, {
+  handle: '.handle',
+  animation: 150
+});
 
 // Update categories
 const updateCategories = document.getElementById("update-categories");
@@ -17,13 +23,15 @@ if (updateCategories) {
     let items = [];
 
     const categoryItems = Array.from(document.getElementsByClassName("category-item"));
-    categoryItems.forEach(category => {
+    categoryItems.forEach((category, i) => {
       let name = category.querySelector(".form-control").value.trim();
       if (name) {
+        console.log(name)
         items.push({
           "id": category.id,
           "name": name,
-          "checked": category.querySelector("input[type='checkbox']").checked
+          "checked": category.querySelector("input[type='checkbox']").checked,
+          "order": i
         });
       }
     });
@@ -37,6 +45,7 @@ if (updateCategories) {
       type: "post"
     }).then(response => {
       showToast("Update category result", response.msg);
+      window.location.reload(true); // Reload without cache, avoids issues when reordering
     });
   });
 }
@@ -158,48 +167,4 @@ if (updateSettings) {
       showToast("Updated settings", response.msg);
     });
   });
-}
-
-// Export transactions
-const exportTransactions = document.getElementById("export-top-ups");
-if (exportTransactions) {
-  exportTransactions.addEventListener("click", e => {
-    const from = document.getElementById("from-date").value;
-    const to = document.getElementById("to-date").value;
-
-    const export_dropdown = document.getElementById("export-type");
-    const export_type = export_dropdown.options[export_dropdown.selectedIndex].value;
-
-    const reponse_dropdown = document.getElementById("response-type");
-    const response_type = reponse_dropdown.options[reponse_dropdown.selectedIndex].value;
-
-    const url = `/transactions/export?type=${export_type}&start_date=${from}&end_date=${to}&response_type=${response_type}`;
-    window.open(url, "_blank");
-  });
-}
-
-if (window.location.pathname.includes("transactions")) {
-  if (window.location.search.includes("top_ups")) {
-    const top_ups = document.getElementById("top-ups");
-    console.log(top_ups)
-    if (top_ups) {
-      document.getElementById("top-ups-tab").classList.add("active");
-      top_ups.classList.add("show");
-      top_ups.classList.add("active");
-    }
-  } else if (window.location.search.includes("ideal")) {
-    const ideals = document.getElementById("ideal");
-    if (ideals) {
-      document.getElementById("ideal-tab").classList.add("active");
-      ideals.classList.add("show");
-      ideals.classList.add("active");
-    }
-  } else {
-    const sales = document.getElementById("sales");
-    if (sales) {
-      document.getElementById("sales-tab").classList.add("active");
-      sales.classList.add("show");
-      sales.classList.add("active");
-    }
-  }
 }

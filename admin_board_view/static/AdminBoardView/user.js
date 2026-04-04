@@ -73,6 +73,7 @@ edit_buttons.forEach(btn => {
           xhr.setRequestHeader("X-CSRFToken", csrf_token);
         },
         success: (response) => {
+          td.setAttribute("card_name", input.value);
           showToast("Renamed card", response);
         }, 
         error: (response) => {

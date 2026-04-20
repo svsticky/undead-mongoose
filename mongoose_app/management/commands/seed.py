@@ -67,25 +67,18 @@ class Command(BaseCommand):
             faker.seed_instance(seed)
             randseed(seed)
 
-        # Configuration
-        Configuration().save()
-
-        print("Created 1 Configuration")
-
         # Users
-        users = [
-            User(
-                user_id,
-                user_id,
-                faker.name(),
-                faker.date_of_birth(minimum_age=15, maximum_age=28),
-                faker.email(),
-                Decimal(0),
+        users = []
+        for id in range(20):
+            user = User.objects.create(
+                user_id=id,
+                name=faker.name(),
+                birthday=faker.date_of_birth(minimum_age=15, maximum_age=28),
+                email=faker.email(),
+                balance=Decimal(0)
             )
-            for user_id in range(20)
-        ]
-        for user in users:
-            user.save()
+            users.append(user)
+                
 
         test_user = randelem(users)
         test_user.email = "test@svsticky.nl"
@@ -94,10 +87,8 @@ class Command(BaseCommand):
         print(f"Created {len(users)} Users")
 
         # Cards and CardConfirmations
-        card_id = 0
         cards = []
         confirms = []
-        confirmation_id = 0
         for user in users:
             chance = randint(1, 10)
             if chance <= 1:
@@ -108,58 +99,64 @@ class Command(BaseCommand):
                 num_cards = 2
 
             for _ in range(num_cards):
-                active = randint(0, 9) != 0
+                active = randint(1, 10) != 0
                 name = faker.card_name()
 
-                card = Card(card_id, faker.ean(length=8), name, active, user.id)
-                card.save()
+                card = Card.objects.create(
+                    card_id=faker.ean(length=8),
+                    card_name=name,
+                    active=active,
+                    user_id=user
+                )
                 cards.append(card)
-                card_id += 1
 
                 if active:
                     three_years_ago = datetime.now() - timedelta(days=3 * 365)
                     activation_date = make_aware(faker.date_time_between(three_years_ago))
                     card.last_used = make_aware(faker.date_time_between(activation_date))
                     card.save()
-                    confirmation = CardConfirmation(
-                        confirmation_id, activation_date, card.id, faker.password(length=32)
-                    )
-                    confirmation.save()
-                    confirmation_id += 1
-                    confirms.append(confirmation)
 
-        print(f"Created {card_id} Cards")
+                confirmation = CardConfirmation.objects.create(
+                    timestamp=activation_date,
+                    card_id=card.id,
+                    token=faker.password(length=32)
+                )
+                confirms.append(confirmation)
+
+        print(f"Created {len(cards)} Cards")
 
         # Categories
-        num_nonalcoholic_categories = randint(3, 6)
-        categories = [
-            Category(id, faker.unique.color_name(), False)
-            for id in range(0, num_nonalcoholic_categories)
-        ]
-        categories.append(
-            Category(num_nonalcoholic_categories, faker.unique.color_name(), True)
-        )
-        for category in categories:
-            category.save()
+        category_count = randint(3,6)
+        categories = []
+        for i in range(category_count):
+            cat = Category.objects.create(
+                name=faker.unique.color_name(),
+                alcoholic=(i==0),
+                order=i
+            )
+            categories.append(cat)
 
         print(f"Created {len(categories)} Categories")
 
         # VATs
-        vats = [VAT(id, randint(0, 100)) for id in range(0, 2)]
-        for vat in vats:
-            vat.save()
+        vats = []
+        for id in range(3):
+            vat = VAT.objects.create(percentage=randint(0,100))
+            vats.append(vat)
 
         print(f"Created {len(vats)} VATs")
 
         # Products
         products = []
-        for id in range(0, 30):
-            price = randprice(0, 10)
-            category = randelem(categories)
-            vat = randelem(vats)
+        for _ in range(30):
             enabled = randint(0, 10) > 3
-            product = Product(
-                id, faker.catch_phrase(), price, None, category.id, vat.id, enabled
+            product = Product.objects.create(
+                name=faker.catch_phrase(),
+                price=randprice(0, 3),
+                image=None,
+                category=randelem(categories),
+                vat=randelem(vats),
+                enabled=enabled
             )
             product.save()
             products.append(product)
@@ -167,10 +164,8 @@ class Command(BaseCommand):
         print(f"Created {len(products)} Products")
 
         # TopUp- and IDealTransactions
-        topup_trans_id = 0
-        trans_count = 0
-        prod_trans_id = 0
-        sale_trans_id = 0
+        topup_trans_count = 0
+        sale_trans_count = 0
         for user in users:
             if not any(
                 card.user_id.user_id == user.id and card.active for card in cards
@@ -178,8 +173,7 @@ class Command(BaseCommand):
                 continue
 
             num_transactions = randint(10, 20)
-            trans_count += num_transactions
-
+            topup_trans_count += num_transactions
             # First the earliest card confirmation that is linked to this user
             first_date = sorted(
                 confirm.timestamp
@@ -199,21 +193,19 @@ class Command(BaseCommand):
                 balance += topup_price
                 is_topup = randint(0, 5) == 0
                 if is_topup:
-                    topup = TopUpTransaction(
-                        topup_trans_id, user.id, topup_price, start_date, False, 1
+                    TopUpTransaction.objects.create(
+                        user_id=user,
+                        transaction_sum=topup_price,
+                        type=1
                     )
-                    topup.save()
-                    topup_trans_id += 1
                 else:
-                    ideal = IDealTransaction(
-                        user.id,
-                        topup_price,
-                        make_aware(faker.date_time_between(end_date - timedelta(days=3 * 365), end_date)),
-                        faker.uuid4(cast_to=None),
-                        PaymentStatus.PAID,
-                        False,
+                    IDealTransaction.objects.create(
+                        transaction_sum=topup_price,
+                        date=make_aware(faker.date_time_between(end_date - timedelta(days=3 * 365), end_date)),
+                        user_id=user,
+                        status=PaymentStatus.PAID,
+                        added=False
                     )
-                    ideal.save()
 
                 trans_text = "Topup" if is_topup else "iDeal"
                 print(f"Created {trans_text} transaction for €{topup_price}")
@@ -244,37 +236,30 @@ class Command(BaseCommand):
                         amount * product.price for amount, product in cart_slice
                     )
 
-                    sale_trans = SaleTransaction(
-                        sale_trans_id,
-                        user.id,
-                        trans_total,
-                        make_aware(faker.date_time_between(end_date - timedelta(days=3 * 365), end_date)),
-                        False,
-                        False,
+                    sale_trans = SaleTransaction.objects.create(
+                        user_id=user,
+                        transaction_sum=trans_total,
+                        date=make_aware(faker.date_time_between(end_date - timedelta(days=3 * 365), end_date)),
+                        cancelled=False,
+                        added=False,
                     )
-                    sale_trans.save()
-                    sale_trans_id += 1
 
                     # Products in the cart are evenly divided into sale transactions
                     for amount, product in cart_slice:
-                        prod_trans = ProductTransactions(
-                            prod_trans_id,
-                            product.id,
-                            sale_trans.id,
-                            product.price,
-                            product.vat.percentage,
-                            amount,
+                        ProductTransactions.objects.create(
+                            product_id=product,
+                            transaction_id=sale_trans,
+                            product_price=product.price,
+                            product_vat=product.vat.percentage,
+                            amount=amount,
                         )
-                        prod_trans_id += 1
-                        prod_trans.save()
+                        sale_trans_count += 1
 
                 cart_total = sum(amount * product.price for amount, product in cart)
-                print(
-                    f"Created {num_sale_trans} SaleTransaction and {len(cart)} ProductTransactions totalling €{cart_total}"
-                )
+                print(f"Created {num_sale_trans} SaleTransactions and {len(cart)} ProductTransactions totalling €{cart_total}")
 
-        print(f"Created {trans_count} TopUp- and IDealTransactions")
-        print(f"Created {prod_trans_id} Sale- and ProductTransactions")
+        print(f"Created {topup_trans_count} TopUp- and IDealTransactions")
+        print(f"Created {sale_trans_count} Sale- and ProductTransactions")
 
 
 def randprice(start, end):

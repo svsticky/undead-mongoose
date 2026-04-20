@@ -7,6 +7,9 @@ from django.http import HttpResponse
 from django.utils import timezone
 from datetime import datetime, timedelta
 from itertools import groupby
+import logging
+import sentry_sdk
+logger = logging.getLogger(__name__)
 
 from admin_board_view.middleware import dashboard_authenticated, dashboard_admin
 from admin_board_view.utils import create_paginator
@@ -270,12 +273,12 @@ def category(request):
 
         return JsonResponse({"msg": "Updated the mongoose categories"})
     except Exception as e:
-        print(e)
+        logger.exception("Something went wrong whilst trying to save the categories", e)
+        sentry_sdk.capture_exception(e)
         return JsonResponse(
             {"msg": "Something went wrong whilst trying to save the categories"},
             status=400,
         )
-
 
 @dashboard_admin
 def vat(request):
@@ -295,7 +298,8 @@ def vat(request):
 
         return JsonResponse({"msg": "Updated the mongoose VAT percentages"})
     except Exception as e:
-        print(e)
+        logger.exception("Something went wrong whilst trying to save the VAT percentages", e)
+        sentry_sdk.capture_exception(e)
         return JsonResponse(
             {"msg": "Something went wrong whilst trying to save the VAT percentages"},
             status=400,
@@ -320,7 +324,8 @@ def settings_update(request):
         configuration.save()
         return JsonResponse({"msg": "Updated the mongoose configuration"})
     except Exception as e:
-        print(e)
+        logger.exception("Something went wrong whilst trying to save the configuration", e)
+        sentry_sdk.capture_exception(e)
         return JsonResponse(
             {"msg": "Something went wrong whilst trying to save the configuration"},
             status=400,
@@ -475,7 +480,8 @@ def export_sale_transactions(request):
         else:
             return HttpResponse(f"Invalid response type {response_type}", status=400)
     except Exception as e:
-        print(e)
+        logger.exception("Something went wrong whilst trying to export the sale transactions", e)
+        sentry_sdk.capture_exception(e)
         return HttpResponse(
             "Something went wrong whilst trying to export the sale transactions.",
             status=400,

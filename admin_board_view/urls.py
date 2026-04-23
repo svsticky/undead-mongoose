@@ -12,6 +12,8 @@ urlpatterns = [
     path('settings', views.settings_page, name='settings'),
     path('transactions', views.transactions, name='transactions'),
     path('salesInfo', views.salesInfo, name='salesInfo'),
+    path('mutations', views.mutations, name='mutations'),
+    path('mutate', views.mutate, name='mutate'),
 
     path('product/toggle', views.toggle, name='toggle'),
     path('product/delete', views.delete, name='delete'),

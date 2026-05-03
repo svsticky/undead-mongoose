@@ -282,12 +282,7 @@ def register_card(request):
     user_id = koala_response["id"]
     # Check if user exists.
     user = User.objects.filter(user_id=user_id).first()
-    # If so, add the card to the already existing user.
-    if not user == None:
-        card = Card.objects.create(card_id=card_id, active=False, user_id=user)
-        send_confirmation(koala_response["email"], card)
-    # Else, we first create the user based on the info from koala.
-    else:
+    if user == None:
         first_name = koala_response["first_name"]
         infix = None
         if "infix" in koala_response:
@@ -303,8 +298,10 @@ def register_card(request):
             birthday=born,
             email=koala_response["email"],
         )
-        card = Card.objects.create(card_id=card_id, active=False, user_id=user)
-        send_confirmation(koala_response["email"], card)
+
+    card = Card.objects.create(card_id=card_id, active=False, user_id=user)
+    send_confirmation(user.email, card)
+
     # If that all succeeds, we return CREATED.
     return HttpResponse(status=201)
 

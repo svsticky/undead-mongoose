@@ -40,7 +40,10 @@ def index(request):
             },
         )
     else:
-        user = User.objects.get(email=request.user.email)
+        user = User.objects.filter(email=request.user.email).first()
+
+        if user == None:
+            return render(request, 'card-needed.html')
 
         # Get product sales
         product_sales = list(

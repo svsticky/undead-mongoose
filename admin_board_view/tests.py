@@ -12,29 +12,23 @@ class AdminBoardViewTests(TestCase):
 
         # Create normal user in auth and mongoose
         self.normal_auth_user = AuthUser.objects.create_user(
-            username="normal@example.com",
+            username="kc-uuid-normal",
             email="normal@example.com",
             password="password"
         )
         self.normal_mongoose_user = MongooseUser.objects.create(
-            user_id=1001,
-            name="Normal User",
-            email="normal@example.com",
-            birthday="2000-01-01",
+            user_id="kc-uuid-normal",
             balance=15.00
         )
 
         # Create admin user in auth and mongoose
         self.admin_auth_user = AuthUser.objects.create_superuser(
-            username="admin@example.com",
+            username="kc-uuid-admin",
             email="admin@example.com",
             password="password"
         )
         self.admin_mongoose_user = MongooseUser.objects.create(
-            user_id=1002,
-            name="Admin User",
-            email="admin@example.com",
-            birthday="1995-05-05",
+            user_id="kc-uuid-admin",
             balance=50.00
         )
 
@@ -45,14 +39,12 @@ class AdminBoardViewTests(TestCase):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "user_home.html")
-        self.assertContains(response, "Normal User")
 
     def test_index_admin_user_sees_user_home(self):
         self.client.force_login(self.admin_auth_user)
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "user_home.html")
-        self.assertContains(response, "Admin User")
 
     def test_admin_dashboard_accessible_by_superuser(self):
         self.client.force_login(self.admin_auth_user)

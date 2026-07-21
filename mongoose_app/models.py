@@ -234,12 +234,9 @@ class IDealTransaction(Transaction):
         )
 
 
-# User needs name, age and balance to be able to make sense to BESTUUUUUR.
+# User needs user_id and balance for Mongoose transactions. Name, email, and birthday are fetched dynamically from Keycloak.
 class User(models.Model):
-    user_id = models.IntegerField(unique=True)
-    name = models.CharField(max_length=50)
-    birthday = models.DateField()
-    email = models.EmailField(max_length=254, null=True, blank=True)
+    user_id = models.CharField(max_length=255, unique=True)
     balance = models.DecimalField(
         decimal_places=2, max_digits=6, default=Decimal("0.00")
     )
@@ -248,6 +245,47 @@ class User(models.Model):
         blank=True, 
         related_name="favorited_by"
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._kc_info_cache = None
+
+    def get_keycloak_info(self):
+        if self._kc_info_cache is None:
+            from mongoose_app.views import get_keycloak_user_by_id
+            self._kc_info_cache = get_keycloak_user_by_id(self.user_id) or {}
+        return self._kc_info_cache
+
+    @property
+    def name(self):
+        kc = self.get_keycloak_info()
+        first_name = kc.get("firstName", "")
+        last_name = kc.get("lastName", "")
+        attributes = kc.get("attributes", {})
+        infix = attributes.get("infix", [None])[0] if isinstance(attributes, dict) else None
+        if first_name or last_name:
+            return f"{first_name} {infix} {last_name}".strip() if infix else f"{first_name} {last_name}".strip()
+        return kc.get("username", f"User {self.user_id}")
+
+    @property
+    def email(self):
+        kc = self.get_keycloak_info()
+        return kc.get("email", "")
+
+    @property
+    def birthday(self):
+        from datetime import datetime, date
+        kc = self.get_keycloak_info()
+        attributes = kc.get("attributes", {})
+        bd = None
+        if isinstance(attributes, dict):
+            bd = attributes.get("birthday", [None])[0] or attributes.get("birth_date", [None])[0]
+        if bd:
+            try:
+                return datetime.strptime(str(bd), "%Y-%m-%d").date()
+            except (ValueError, TypeError):
+                pass
+        return date(2000, 1, 1)
 
     def __str__(self):
         return self.name

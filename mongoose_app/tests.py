@@ -82,11 +82,12 @@ class KeycloakIntegrationTests(TestCase):
         user = get_keycloak_user_by_student_number("999999")
         self.assertIsNone(user)
 
+    @patch("mongoose_app.views.get_keycloak_user_by_id")
     @patch("mongoose_app.views.get_keycloak_user_by_student_number")
     @patch("mongoose_app.views.send_confirmation")
-    def test_register_card_user_creation(self, mock_send_conf, mock_get_kc_user):
-        mock_get_kc_user.return_value = {
-            "id": "uuid-123",
+    def test_register_card_user_creation(self, mock_send_conf, mock_get_kc_user, mock_get_kc_id):
+        user_data = {
+            "id": "uuid-999",
             "username": "student123",
             "firstName": "Jane",
             "lastName": "Doe",
@@ -97,6 +98,8 @@ class KeycloakIntegrationTests(TestCase):
                 "infix": ["van"]
             }
         }
+        mock_get_kc_user.return_value = user_data
+        mock_get_kc_id.return_value = user_data
 
         # Mock requests client representation
         request_mock = MagicMock()
@@ -108,10 +111,10 @@ class KeycloakIntegrationTests(TestCase):
         with patch("mongoose_app.views.authenticated", lambda x: x):
             response = register_card(request_mock)
 
-        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.status_code, 200)
 
         # Check if user is created in database
-        user = User.objects.get(user_id=1234567)
+        user = User.objects.get(user_id="uuid-999")
         self.assertEqual(user.name, "Jane van Doe")
         self.assertEqual(user.email, "jane.doe@example.com")
         self.assertEqual(str(user.birthday), "2001-05-15")

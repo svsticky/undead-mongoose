@@ -35,6 +35,10 @@
   background-color: #fa6b20;
 }
 
+.text-board {
+  color: #fa6b20;
+}
+
 .disabled-product {
   filter: grayscale(100%);
 }

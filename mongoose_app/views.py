@@ -346,7 +346,7 @@ def register_card(request):
         
         attributes = keycloak_user.get("attributes", {})
         infix = attributes.get("infix", [None])[0]
-        birth_date_str = attributes.get("birth_date", [None])[0] or attributes.get("birthday", [None])[0]
+        birth_date_str = attributes.get("birthday", [None])[0] or attributes.get("birth_date", [None])[0]
         
         if birth_date_str:
             try:

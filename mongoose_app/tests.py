@@ -37,7 +37,7 @@ class KeycloakIntegrationTests(TestCase):
                 "email": "john.doe@example.com",
                 "attributes": {
                     "student_number": ["123456"],
-                    "birth_date": ["1999-12-31"]
+                    "birthday": ["1999-12-31"]
                 }
             }
         ]
@@ -93,7 +93,7 @@ class KeycloakIntegrationTests(TestCase):
             "email": "jane.doe@example.com",
             "attributes": {
                 "student_number": ["1234567"],
-                "birth_date": ["2001-05-15"],
+                "birthday": ["2001-05-15"],
                 "infix": ["van"]
             }
         }

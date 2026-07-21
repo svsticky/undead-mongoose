@@ -86,17 +86,17 @@ def get_user_home_context(request):
     }
 
 
+# @dashboard_authenticated
+# def index(request):
+#     return render(
+#         request,
+#         "user_home.html",
+#         get_user_home_context(request),
+#     )
+
+
 @dashboard_authenticated
 def index(request):
-    return render(
-        request,
-        "user_home.html",
-        get_user_home_context(request),
-    )
-
-
-@dashboard_admin
-def admin_dashboard(request):
     product_amount = Product.objects.count()
     total_balance = sum(user.balance for user in User.objects.all())
     product_sales = ProductTransactions.objects.prefetch_related('transaction_id').order_by('transaction_id__date').reverse()
@@ -108,7 +108,7 @@ def admin_dashboard(request):
     return render(
         request,
         "home.html",
-        {
+        get_user_home_context(request) | {
             "users": User.objects.all(),
             "product_amount": product_amount,
             "sales": sales_page,

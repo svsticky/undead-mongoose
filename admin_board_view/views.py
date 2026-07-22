@@ -17,31 +17,13 @@ from django.conf import settings
 from .forms import TopUpForm
 
 
-@dashboard_authenticated
-def index(request):
-    if request.user.is_superuser:
-        product_amount = Product.objects.count()
-        total_balance = sum(user.balance for user in User.objects.all())
-        product_sales = ProductTransactions.objects.prefetch_related('transaction_id').order_by('transaction_id__date').reverse()
-        product_sale_groups = []
-        for designation, member_group in groupby(product_sales, lambda sale: sale.transaction_id):
-            product_sale_groups.append({"key": designation, "values": list(member_group)})
-        
-        sales_page = create_paginator(product_sale_groups[:5], request.GET.get("sales"))
-        return render(
-            request,
-            "home.html",
-            {
-                "users": User.objects.all(),
-                "product_amount": product_amount,
-                "sales": sales_page,
-                "total_balance": total_balance,
-                "top_types": top_up_types,
-            },
-        )
-    else:
+def get_user_home_context(request):
+    try:
         user = User.objects.get(email=request.user.email)
+    except User.DoesNotExist:
+        user = None
 
+    if user:
         # Get product sales
         product_sales = list(
             ProductTransactions.objects.all().filter(transaction_id__user_id=user)
@@ -60,12 +42,6 @@ def index(request):
             )
         product_sale_groups.sort(key=itemgetter("date"), reverse=True)
         sales_page = create_paginator(product_sale_groups, request.GET.get("sales"))
-        transaction_id = request.GET.dict().get("transaction_id")
-        transaction = (
-            IDealTransaction.objects.get(transaction_id=transaction_id)
-            if transaction_id
-            else None
-        )
 
         # Get topup page
         top_ups = (
@@ -84,24 +60,62 @@ def index(request):
             key=lambda transaction: transaction[0], reverse=True
         )
         top_up_page = create_paginator(all_top_ups, request.GET.get("top_ups"))
+        cards = Card.objects.filter(user_id__pk=user.pk)
+    else:
+        sales_page = create_paginator([], request.GET.get("sales"))
+        top_up_page = create_paginator([], request.GET.get("top_ups"))
+        cards = []
 
-        cards = Card.objects.filter(user_id__pk = user.pk)
+    transaction_id = request.GET.dict().get("transaction_id")
+    transaction = (
+        IDealTransaction.objects.get(transaction_id=transaction_id)
+        if transaction_id
+        else None
+    )
 
-        return render(
-            request,
-            "user_home.html",
-            {
-                "user_info": user,
-                "top_ups": top_up_page,
-                "sales": sales_page,
-                "form": TopUpForm,
-                "transaction": transaction,
-                "PaymentStatus": PaymentStatus,
-                "TRANSACTION_FEE": settings.TRANSACTION_FEE,
-                "error": request.GET.get("error"),
-                "cards": cards
-            },
-        )
+    return {
+        "user_info": user,
+        "top_ups": top_up_page,
+        "sales": sales_page,
+        "form": TopUpForm,
+        "transaction": transaction,
+        "PaymentStatus": PaymentStatus,
+        "TRANSACTION_FEE": settings.TRANSACTION_FEE,
+        "error": request.GET.get("error"),
+        "cards": cards
+    }
+
+
+@dashboard_authenticated
+def index(request):
+    return render(
+        request,
+        "user_home.html",
+        get_user_home_context(request),
+    )
+
+
+@dashboard_admin
+def admin_dashboard(request):
+    product_amount = Product.objects.count()
+    total_balance = sum(user.balance for user in User.objects.all())
+    product_sales = ProductTransactions.objects.prefetch_related('transaction_id').order_by('transaction_id__date').reverse()
+    product_sale_groups = []
+    for designation, member_group in groupby(product_sales, lambda sale: sale.transaction_id):
+        product_sale_groups.append({"key": designation, "values": list(member_group)})
+    
+    sales_page = create_paginator(product_sale_groups[:5], request.GET.get("sales"))
+    return render(
+        request,
+        "home.html",
+        {
+            "users": User.objects.all(),
+            "product_amount": product_amount,
+            "sales": sales_page,
+            "total_balance": total_balance,
+            "top_types": top_up_types,
+        },
+    )
 
 
 def login(request):

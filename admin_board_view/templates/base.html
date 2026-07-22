@@ -25,23 +25,35 @@
     {% csrf_token %}
     <nav class="navbar navbar-dark board-color">
       <div class="container-fluid">
-        <a class="navbar-brand" href="#">
+        <a class="navbar-brand" href="/">
           <img src="https://public.svsticky.nl/logos/hoofd_outline_wit.svg" width="30" height="24" class="d-inline-block align-text-top">
           Undead Mongoose
         </a>
+        {% if user.is_superuser %}
+        <div class="d-flex align-items-center">
+          <a class="btn btn-outline-light btn-sm ms-2" href="/admin_dashboard">Admin UI</a>
+        </div>
+        {% endif %}
       </div>
     </nav>
     <div class="d-flex col-auto px-0" style="min-height: calc(100vh - 56px);">
       <div id="sidebar" class="d-flex flex-column flex-shrink-0 text-white bg-dark border-end">
         <div class="nav nav-pills flex-column mb-auto" data-bs-parent="#sidebar">
-          <a href="/" class="nav-link text-white" aria-current="page">
+          <a href="/" class="nav-link text-white" aria-current="page" title="Normal UI">
             {% comment %} Home {% endcomment %}
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-house" viewBox="0 0 16 16">
               <path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L2 8.207V13.5A1.5 1.5 0 0 0 3.5 15h9a1.5 1.5 0 0 0 1.5-1.5V8.207l.646.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM13 7.207V13.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V7.207l5-5z"/>
             </svg>
           </a>
           {% if user.is_superuser %}
-          <a href="/products" class="nav-link text-white">
+          <a href="/admin_dashboard" class="nav-link text-white" title="Admin Dashboard">
+            {% comment %} Speedometer / Dashboard icon {% endcomment %}
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-speedometer2" viewBox="0 0 16 16">
+              <path d="M8 4a.5.5 0 0 1 .5.5V6a.5.5 0 0 1-1 0V4.5A.5.5 0 0 1 8 4M3.732 5.732a.5.5 0 0 1 .707 0l.915.914a.5.5 0 1 1-.708.708l-.914-.915a.5.5 0 0 1 0-.707M2 10a.5.5 0 0 1 .5-.5h1.5a.5.5 0 0 1 0 1H2.5A.5.5 0 0 1 2 10m10.828-4.268a.5.5 0 0 1 0 .707l-.914.915a.5.5 0 1 1-.707-.708l.914-.914a.5.5 0 0 1 .707 0M13.5 10a.5.5 0 0 1-.5.5H11.5a.5.5 0 0 1 0-1h1.5a.5.5 0 0 1 .5.5m-5 3.5a.5.5 0 0 1 .5-.5v-1.5a.5.5 0 0 1 1 0V13a.5.5 0 0 1-.5.5m-4.268-1.172a.5.5 0 0 1 .707 0l.915.914a.5.5 0 1 1-.708.708l-.914-.915a.5.5 0 0 1 0-.707m9.242 0a.5.5 0 0 1 0 .707l-.914.915a.5.5 0 1 1-.707-.708l.914-.914a.5.5 0 0 1 .707 0"/>
+              <path d="M8 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4m0 1a3 3 0 1 1 0-6 3 3 0 0 1 0 6"/>
+            </svg>
+          </a>
+          <a href="/products" class="nav-link text-white" title="Products">
             {% comment %} Products {% endcomment %}
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-basket" viewBox="0 0 16 16">
               <path d="M5.757 1.071a.5.5 0 0 1 .172.686L3.383 6h9.234L10.07 1.757a.5.5 0 1 1 .858-.514L13.783 6H15a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1v4.5a2.5 2.5 0 0 1-2.5 2.5h-9A2.5 2.5 0 0 1 1 13.5V9a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h1.217L5.07 1.243a.5.5 0 0 1 .686-.172zM2 9v4.5A1.5 1.5 0 0 0 3.5 15h9a1.5 1.5 0 0 0 1.5-1.5V9zM1 7v1h14V7zm3 3a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-1 0v-3A.5.5 0 0 1 4 10m2 0a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-1 0v-3A.5.5 0 0 1 6 10m2 0a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-1 0v-3A.5.5 0 0 1 8 10m2 0a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-1 0v-3a.5.5 0 0 1 .5-.5m2 0a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-1 0v-3a.5.5 0 0 1 .5-.5"/>

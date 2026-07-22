@@ -2,7 +2,10 @@
 {% load static %}
 {% load tz %}  <!-- Load timezone template tag at the top -->
 {% block body %}
-<h1>Home</h1>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1>Admin Dashboard</h1>
+  <a href="/" class="btn btn-outline-secondary btn-sm">Switch to Normal UI</a>
+</div>
 <p>
   This is the admin portal for Undead Mongoose / Magnificent Sloth.
 </p>

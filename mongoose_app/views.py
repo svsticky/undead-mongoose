@@ -243,6 +243,54 @@ def update_balance(request):
         )
 
 
+def get_keycloak_user_by_student_number(student_number):
+    """
+    Retrieves user information from Keycloak using Client Credentials.
+    """
+    keycloak_url = getattr(settings, "KEYCLOAK_URL", None)
+    realm = getattr(settings, "KEYCLOAK_REALM", None)
+    client_id = getattr(settings, "KEYCLOAK_CLIENT_ID", None)
+    client_secret = getattr(settings, "KEYCLOAK_CLIENT_SECRET", None)
+
+    if not all([keycloak_url, realm, client_id, client_secret]):
+        raise ValueError("Keycloak configuration is incomplete in settings.")
+
+    # 1. Obtain Access Token
+    token_url = f"{keycloak_url.rstrip('/')}/realms/{realm}/protocol/openid-connect/token"
+    token_data = {
+        "grant_type": "client_credentials",
+        "client_id": client_id,
+        "client_secret": client_secret,
+    }
+    token_response = requests.post(token_url, data=token_data)
+    token_response.raise_for_status()
+    access_token = token_response.json()["access_token"]
+
+    # 2. Query Keycloak User
+    users_url = f"{keycloak_url.rstrip('/')}/admin/realms/{realm}/users"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Accept": "application/json",
+    }
+    params = {
+        "q": f"student_number:{student_number}"
+    }
+    users_response = requests.get(users_url, headers=headers, params=params)
+    users_response.raise_for_status()
+    users_list = users_response.json()
+    
+    if not users_list:
+        return None
+        
+    for u in users_list:
+        attributes = u.get("attributes", {})
+        std_num_list = attributes.get("student_number", [])
+        if std_num_list and str(std_num_list[0]) == str(student_number):
+            return u
+            
+    return users_list[0]
+
+
 @csrf_exempt
 @authenticated
 @require_http_methods(["POST"])
@@ -251,7 +299,7 @@ def register_card(request):
     Reached when student number is entered for a certain card.
     Both should be provided in request.
     Then:
-    - Ask koala for user info
+    - Ask keycloak for user info
     - If user does not exist here, create it
     - Else add card to user.
     """
@@ -267,33 +315,46 @@ def register_card(request):
     if not card == None:
         return HttpResponse(status=409)
 
-    # Obtain user information from Koala (or any other central member base)
-    koala_response = requests.get(
-        settings.USER_URL + "/api/internal/member_by_studentid",
-        params={"student_number": student_nr},
-        headers={"Authorization": settings.USER_TOKEN},
-    )
-    # If user is not found in database, we cannot create user here.
-    if koala_response.status_code == 204:
+    try:
+        user_id = int(student_nr)
+    except ValueError:
+        return HttpResponse("Invalid student number format", status=400)
+
+    try:
+        keycloak_user = get_keycloak_user_by_student_number(student_nr)
+    except Exception as e:
+        print(f"Keycloak query failed: {e}")
+        return HttpResponse("Internal server error during user lookup", status=500)
+
+    if keycloak_user is None:
         return HttpResponse(status=404)  # Sloth expects a 404.
 
-    # Get user info.
-    koala_response = koala_response.json()
-    user_id = koala_response["id"]
+    email = keycloak_user.get("email")
+    if not email:
+        return HttpResponse("User email not found in Keycloak", status=400)
+
     # Check if user exists.
     user = User.objects.filter(user_id=user_id).first()
     # If so, add the card to the already existing user.
     if not user == None:
         card = Card.objects.create(card_id=card_id, active=False, user_id=user)
-        send_confirmation(koala_response["email"], card)
-    # Else, we first create the user based on the info from koala.
+        send_confirmation(email, card)
+    # Else, we first create the user based on the info from keycloak.
     else:
-        first_name = koala_response["first_name"]
-        infix = None
-        if "infix" in koala_response:
-            infix = koala_response["infix"]
-        last_name = koala_response["last_name"]
-        born = datetime.strptime(koala_response["birth_date"], "%Y-%m-%d")
+        first_name = keycloak_user.get("firstName", "")
+        last_name = keycloak_user.get("lastName", "")
+        
+        attributes = keycloak_user.get("attributes", {})
+        infix = attributes.get("infix", [None])[0]
+        birth_date_str = attributes.get("birth_date", [None])[0] or attributes.get("birthday", [None])[0]
+        
+        if birth_date_str:
+            try:
+                born = datetime.strptime(birth_date_str, "%Y-%m-%d")
+            except (ValueError, TypeError):
+                born = datetime.strptime("2000-01-01", "%Y-%m-%d")
+        else:
+            born = datetime.strptime("2000-01-01", "%Y-%m-%d")
 
         user = User.objects.create(
             user_id=user_id,
@@ -301,10 +362,10 @@ def register_card(request):
             if infix
             else f"{first_name} {last_name}",
             birthday=born,
-            email=koala_response["email"],
+            email=email,
         )
         card = Card.objects.create(card_id=card_id, active=False, user_id=user)
-        send_confirmation(koala_response["email"], card)
+        send_confirmation(email, card)
     # If that all succeeds, we return CREATED.
     return HttpResponse(status=201)
 

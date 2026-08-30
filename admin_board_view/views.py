@@ -19,7 +19,7 @@ from .forms import TopUpForm
 
 def get_user_home_context(request):
     try:
-        user = User.objects.get(email=request.user.email)
+        user = User.objects.get(user_id=request.user.username)
     except User.DoesNotExist:
         user = None
 
@@ -237,11 +237,13 @@ def users(request, user_id=None):
             },
         )
     else:
-        users = User.objects.all()
+        users = list(User.objects.all())
 
-        # Only filter on user name if a name is given
-        if request.GET.get("name"):
-            users = users.filter(name__icontains=request.GET.get("name"))
+        name_query = request.GET.get("name")
+        if name_query:
+            users = [u for u in users if name_query.lower() in u.name.lower()]
+
+        users.sort(key=lambda u: u.name.lower())
 
         user_page = create_paginator(users, request.GET.get("users"), p_len=15)
         return render(request, "user.html", {"users": users, "user_page": user_page})

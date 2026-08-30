@@ -10,6 +10,7 @@ from django.conf import settings
 from admin_board_view.forms import TopUpForm
 from admin_board_view.middleware import dashboard_authenticated
 from .middleware import authenticated
+from .keycloak import get_keycloak_user_by_student_number
 from .models import (
     CardConfirmation,
     Category,
@@ -23,7 +24,7 @@ from .models import (
     User,
     Configuration,
 )
-from datetime import datetime, date
+from datetime import date
 from django.views.decorators.csrf import csrf_exempt
 import requests
 import threading
@@ -75,7 +76,7 @@ def delete_card(request):
         return HttpResponse("Unknown card uuid", status=404)
 
     card_user: User = card.user_id
-    if request.user.is_superuser or card_user.email == request.user.email:
+    if request.user.is_superuser or card_user.user_id == request.user.username:
         card.delete()
         return HttpResponse(status=200)
 
@@ -96,7 +97,7 @@ def change_card_name(request):
 
         # Check if card belongs to user or user is admin
         card_user: User = card.user_id
-        if "name" in request.GET and (request.user.is_superuser or card_user.email == request.user.email):
+        if "name" in request.GET and (request.user.is_superuser or card_user.user_id == request.user.username):
             # Update card name
             card.card_name = request.GET.get("name")
             card.save()
@@ -115,12 +116,17 @@ def get_products(request):
     card_id = request.GET.get("uuid")
     card = Card.objects.filter(card_id=card_id).first()
     user = User.objects.filter(user_id=card.user_id.user_id).first()
-    # Calc age of user based on birthday
+    # Calc age of user based on birthday. If Keycloak can't tell us their
+    # birthday (unreachable, or the account was deleted there), treat them
+    # as underage rather than guessing.
     today = date.today()
+    birthday = user.birthday
     age = (
         today.year
-        - user.birthday.year
-        - ((today.month, today.day) < (user.birthday.month, user.birthday.day))
+        - birthday.year
+        - ((today.month, today.day) < (birthday.month, birthday.day))
+        if birthday
+        else 0
     )
     alc_time = Configuration.objects.get(pk=1).alc_time
 
@@ -220,7 +226,7 @@ def update_balance(request):
     """
     try:
         body = request.POST.dict()
-        user = User.objects.get(name=body["user"])
+        user = User.objects.get(user_id=body["user_id"])
 
         transaction = TopUpTransaction.objects.create(
             user_id=user, transaction_sum=Decimal(body["balance"]), type=body["type"]
@@ -237,58 +243,10 @@ def update_balance(request):
         )
     except Exception as e:
         return JsonResponse(
-            {"msg": f"Balance for {body['user']} could not be updated."},
+            {"msg": f"Balance for {body['user_id']} could not be updated."},
             status=400,
             safe=False,
         )
-
-
-def get_keycloak_user_by_student_number(student_number):
-    """
-    Retrieves user information from Keycloak using Client Credentials.
-    """
-    keycloak_url = getattr(settings, "KEYCLOAK_URL", None)
-    realm = getattr(settings, "KEYCLOAK_REALM", None)
-    client_id = getattr(settings, "KEYCLOAK_CLIENT_ID", None)
-    client_secret = getattr(settings, "KEYCLOAK_CLIENT_SECRET", None)
-
-    if not all([keycloak_url, realm, client_id, client_secret]):
-        raise ValueError("Keycloak configuration is incomplete in settings.")
-
-    # 1. Obtain Access Token
-    token_url = f"{keycloak_url.rstrip('/')}/realms/{realm}/protocol/openid-connect/token"
-    token_data = {
-        "grant_type": "client_credentials",
-        "client_id": client_id,
-        "client_secret": client_secret,
-    }
-    token_response = requests.post(token_url, data=token_data)
-    token_response.raise_for_status()
-    access_token = token_response.json()["access_token"]
-
-    # 2. Query Keycloak User
-    users_url = f"{keycloak_url.rstrip('/')}/admin/realms/{realm}/users"
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Accept": "application/json",
-    }
-    params = {
-        "q": f"student_number:{student_number}"
-    }
-    users_response = requests.get(users_url, headers=headers, params=params)
-    users_response.raise_for_status()
-    users_list = users_response.json()
-    
-    if not users_list:
-        return None
-        
-    for u in users_list:
-        attributes = u.get("attributes", {})
-        std_num_list = attributes.get("student_number", [])
-        if std_num_list and str(std_num_list[0]) == str(student_number):
-            return u
-            
-    return users_list[0]
 
 
 @csrf_exempt
@@ -346,29 +304,7 @@ def register_card(request):
         if not user_id:
             return HttpResponse("User id not found in Keycloak", status=400)
 
-        first_name = keycloak_user.get("firstName", "")
-        last_name = keycloak_user.get("lastName", "")
-        
-        attributes = keycloak_user.get("attributes", {})
-        infix = attributes.get("infix", [None])[0]
-        birth_date_str = attributes.get("birthday", [None])[0] or attributes.get("birth_date", [None])[0]
-        
-        if birth_date_str:
-            try:
-                born = datetime.strptime(birth_date_str, "%Y-%m-%d")
-            except (ValueError, TypeError):
-                born = datetime.strptime("2000-01-01", "%Y-%m-%d")
-        else:
-            born = datetime.strptime("2000-01-01", "%Y-%m-%d")
-
-        user = User.objects.create(
-            user_id=user_id,
-            name=f"{first_name} {infix} {last_name}"
-            if infix
-            else f"{first_name} {last_name}",
-            birthday=born,
-            email=email,
-        )
+        user = User.objects.create(user_id=user_id)
         card = Card.objects.create(card_id=card_id, active=False, user_id=user)
         send_confirmation(email, card)
     # If that all succeeds, we return CREATED.
@@ -417,18 +353,6 @@ def async_on_webhook(request):
             # TODO: What if this happens?
             if koala_response.status_code == 204:
                 user.delete()
-            print(koala_response.ok)
-            if koala_response.ok:
-                print(koala_response)
-                koala_response = koala_response.json()
-                first_name = koala_response["first_name"]
-                infix = koala_response["infix"] if "infix" in koala_response else ""
-                last_name = koala_response["last_name"]
-                user.name = f"{first_name} {infix} {last_name}"
-                user.birthday = datetime.strptime(
-                    koala_response["birth_date"], "%Y-%m-%d"
-                )
-                user.save()
 
     return HttpResponse(status=200)
 
@@ -468,7 +392,7 @@ def topup(request):
     bound_form = TopUpForm(request.POST)
 
     if bound_form.is_valid():
-        user = User.objects.get(email=request.user)
+        user = User.objects.get(user_id=request.user.username)
         transaction_amount = bound_form.cleaned_data["amount"]
         transaction = IDealTransaction.objects.create(
             user_id=user, transaction_sum=transaction_amount

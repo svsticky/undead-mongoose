@@ -2,8 +2,10 @@ import json
 from unittest.mock import patch, MagicMock
 from django.test import TestCase, override_settings
 from django.http import HttpResponse
+from django.core.cache import cache
 from mongoose_app.models import User, Card
-from mongoose_app.views import get_keycloak_user_by_student_number, register_card
+from mongoose_app.views import register_card
+from mongoose_app.keycloak import get_keycloak_user_by_student_number
 
 @override_settings(
     KEYCLOAK_URL="http://keycloak.local:8080",
@@ -17,9 +19,10 @@ class KeycloakIntegrationTests(TestCase):
     def setUp(self):
         User.objects.all().delete()
         Card.objects.all().delete()
+        cache.clear()
 
-    @patch("mongoose_app.views.requests.post")
-    @patch("mongoose_app.views.requests.get")
+    @patch("mongoose_app.keycloak.requests.post")
+    @patch("mongoose_app.keycloak.requests.get")
     def test_get_keycloak_user_by_student_number_success(self, mock_get, mock_post):
         # Mock token response
         mock_post_resp = MagicMock()
@@ -68,8 +71,8 @@ class KeycloakIntegrationTests(TestCase):
             params={"q": "student_number:123456"}
         )
 
-    @patch("mongoose_app.views.requests.post")
-    @patch("mongoose_app.views.requests.get")
+    @patch("mongoose_app.keycloak.requests.post")
+    @patch("mongoose_app.keycloak.requests.get")
     def test_get_keycloak_user_by_student_number_not_found(self, mock_get, mock_post):
         mock_post_resp = MagicMock()
         mock_post_resp.json.return_value = {"access_token": "mock-token"}
@@ -82,10 +85,11 @@ class KeycloakIntegrationTests(TestCase):
         user = get_keycloak_user_by_student_number("999999")
         self.assertIsNone(user)
 
+    @patch("mongoose_app.models.get_cached_keycloak_user")
     @patch("mongoose_app.views.get_keycloak_user_by_student_number")
     @patch("mongoose_app.views.send_confirmation")
-    def test_register_card_user_creation(self, mock_send_conf, mock_get_kc_user):
-        mock_get_kc_user.return_value = {
+    def test_register_card_user_creation(self, mock_send_conf, mock_get_kc_user, mock_cached_profile):
+        keycloak_profile = {
             "id": "uuid-123",
             "username": "student123",
             "firstName": "Jane",
@@ -97,6 +101,8 @@ class KeycloakIntegrationTests(TestCase):
                 "infix": ["van"]
             }
         }
+        mock_get_kc_user.return_value = keycloak_profile
+        mock_cached_profile.return_value = keycloak_profile
 
         # Mock requests client representation
         request_mock = MagicMock()

@@ -1,26 +1,39 @@
+from unittest.mock import patch
 from django.test import TestCase, Client
 from django.contrib.auth import get_user_model
 from mongoose_app.models import User as MongooseUser, Product, Category, VAT
 
 AuthUser = get_user_model()
 
+# name/birthday/email come from Keycloak now, keyed by user_id -- stand in
+# for that with a fake profile per test account instead of a real lookup.
+KEYCLOAK_PROFILES = {
+    "normal@example.com": {"firstName": "Normal", "lastName": "User", "email": "normal@example.com"},
+    "admin@example.com": {"firstName": "Admin", "lastName": "User", "email": "admin@example.com"},
+}
+
 class AdminBoardViewTests(TestCase):
     def setUp(self):
+        keycloak_patcher = patch(
+            "mongoose_app.models.get_cached_keycloak_user",
+            side_effect=lambda user_id: KEYCLOAK_PROFILES.get(user_id),
+        )
+        self.addCleanup(keycloak_patcher.stop)
+        keycloak_patcher.start()
+
         # Create test category and vat for product creation if needed
         self.category = Category.objects.create(name="Test Category", order=1)
         self.vat = VAT.objects.create(percentage=21)
 
-        # Create normal user in auth and mongoose
+        # Create normal user in auth and mongoose. user_id matches the auth
+        # user's username, mirroring how OIDC login joins the two records.
         self.normal_auth_user = AuthUser.objects.create_user(
             username="normal@example.com",
             email="normal@example.com",
             password="password"
         )
         self.normal_mongoose_user = MongooseUser.objects.create(
-            user_id=1001,
-            name="Normal User",
-            email="normal@example.com",
-            birthday="2000-01-01",
+            user_id="normal@example.com",
             balance=15.00
         )
 
@@ -31,10 +44,7 @@ class AdminBoardViewTests(TestCase):
             password="password"
         )
         self.admin_mongoose_user = MongooseUser.objects.create(
-            user_id=1002,
-            name="Admin User",
-            email="admin@example.com",
-            birthday="1995-05-05",
+            user_id="admin@example.com",
             balance=50.00
         )
 

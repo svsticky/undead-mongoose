@@ -72,24 +72,20 @@ class Command(BaseCommand):
 
         print("Created 1 Configuration")
 
-        # Users
+        # Users. name/birthday/email aren't stored -- they come from
+        # Keycloak by user_id, so seeded users only get a fake id and a
+        # balance; they'll show as "(unavailable)" unless user_id happens
+        # to match a real account in whatever Keycloak you're pointed at.
         users = [
             User(
                 user_id,
                 user_id,
-                faker.name(),
-                faker.date_of_birth(minimum_age=15, maximum_age=28),
-                faker.email(),
                 Decimal(0),
             )
             for user_id in range(20)
         ]
         for user in users:
             user.save()
-
-        test_user = randelem(users)
-        test_user.email = "test@svsticky.nl"
-        test_user.save()
 
         print(f"Created {len(users)} Users")
 

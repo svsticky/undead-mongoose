@@ -316,7 +316,7 @@ def register_card(request):
         return HttpResponse(status=409)
 
     try:
-        user_id = int(student_nr)
+        int(student_nr)
     except ValueError:
         return HttpResponse("Invalid student number format", status=400)
 
@@ -333,14 +333,19 @@ def register_card(request):
     if not email:
         return HttpResponse("User email not found in Keycloak", status=400)
 
-    # Check if user exists.
-    user = User.objects.filter(user_id=user_id).first()
+    user_id = keycloak_user.get("id")
+
+    user = User.objects.filter(user_id=user_id).first() if user_id else None
+
     # If so, add the card to the already existing user.
     if not user == None:
         card = Card.objects.create(card_id=card_id, active=False, user_id=user)
         send_confirmation(email, card)
     # Else, we first create the user based on the info from keycloak.
     else:
+        if not user_id:
+            return HttpResponse("User id not found in Keycloak", status=400)
+
         first_name = keycloak_user.get("firstName", "")
         last_name = keycloak_user.get("lastName", "")
         

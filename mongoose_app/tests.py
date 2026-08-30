@@ -111,7 +111,7 @@ class KeycloakIntegrationTests(TestCase):
         self.assertEqual(response.status_code, 201)
 
         # Check if user is created in database
-        user = User.objects.get(user_id=1234567)
+        user = User.objects.get(user_id="uuid-123")
         self.assertEqual(user.name, "Jane van Doe")
         self.assertEqual(user.email, "jane.doe@example.com")
         self.assertEqual(str(user.birthday), "2001-05-15")

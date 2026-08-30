@@ -236,7 +236,7 @@ class IDealTransaction(Transaction):
 
 # User needs name, age and balance to be able to make sense to BESTUUUUUR.
 class User(models.Model):
-    user_id = models.IntegerField(unique=True)
+    user_id = models.CharField(max_length=255, unique=True)
     name = models.CharField(max_length=50)
     birthday = models.DateField()
     email = models.EmailField(max_length=254, null=True, blank=True)

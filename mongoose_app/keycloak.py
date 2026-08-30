@@ -6,9 +6,13 @@ mongoose stores as little personal data as possible locally -- name, email
 and birthday are not persisted, they are fetched from here on demand and
 cached briefly (see get_cached_keycloak_user).
 """
+import logging
+
 from django.conf import settings
 from django.core.cache import cache
 import requests
+
+logger = logging.getLogger(__name__)
 
 KEYCLOAK_USER_CACHE_SECONDS = 300
 
@@ -59,17 +63,50 @@ def get_cached_keycloak_user(user_id):
     Same as get_keycloak_user_by_id, but cached for a short time so pages
     that render many users (admin dashboard, exports) don't fire one
     request per user per render.
+
+    Used for passive display (User.name/email/birthday) -- so on any
+    failure (bad config, Keycloak unreachable, etc.) this logs the error
+    and returns None rather than raising, so a Keycloak outage degrades a
+    name to "(unavailable)" instead of crashing the whole page. Failures
+    aren't cached, so the next request retries rather than being stuck
+    showing "(unavailable)" for the full TTL after a transient blip.
     """
     cache_key = f"keycloak-user:{user_id}"
     cached = cache.get(cache_key)
     if cached is not None:
         return cached or None
 
-    user = get_keycloak_user_by_id(user_id)
+    try:
+        user = get_keycloak_user_by_id(user_id)
+    except Exception:
+        logger.exception("Failed to fetch Keycloak user %s", user_id)
+        return None
+
     # Cache a sentinel for "not found" too, so a deleted/legacy id doesn't
     # get looked up again on every single access within the TTL.
     cache.set(cache_key, user or False, KEYCLOAK_USER_CACHE_SECONDS)
     return user
+
+
+def list_keycloak_users(max_results=100):
+    """
+    Lists users in the realm (used by the seed command to attach fake
+    balances/cards to real Keycloak accounts instead of inventing ids that
+    don't exist anywhere). Raises on failure -- unlike get_cached_keycloak_user,
+    there's no reasonable silent fallback for "I need real users to seed with".
+    """
+    keycloak_url = settings.KEYCLOAK_URL
+    realm = settings.KEYCLOAK_REALM
+    token = _get_admin_token()
+
+    users_url = f"{keycloak_url.rstrip('/')}/admin/realms/{realm}/users"
+    response = requests.get(
+        users_url,
+        headers={"Authorization": f"Bearer {token}", "Accept": "application/json"},
+        params={"max": max_results},
+    )
+    response.raise_for_status()
+    return response.json()
 
 
 def get_keycloak_user_by_student_number(student_number):

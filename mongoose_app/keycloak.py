@@ -129,6 +129,9 @@ def get_keycloak_user_by_student_number(student_number):
     if not users_list:
         return None
 
+    # The "q" parameter to keycloak is a fuzzy search, so we could match
+    # more than one result. We need to manually go over the results to find
+    # the correct one still.
     for u in users_list:
         attributes = u.get("attributes", {})
         std_num_list = attributes.get("student_number", [])

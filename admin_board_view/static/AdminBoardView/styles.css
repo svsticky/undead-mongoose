@@ -35,6 +35,10 @@
   background-color: #fa6b20;
 }
 
+.text-board {
+  color: #fa6b20;
+}
+
 .disabled-product {
   filter: grayscale(100%);
 }
@@ -42,6 +46,8 @@
 .hidden-item {
   display: none;
 }
+
+.z-100 { z-index: 100; }
 
 a {
   text-decoration: none;

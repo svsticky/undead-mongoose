@@ -1,5 +1,6 @@
 from typing import Any, Dict, Iterable, Optional, Tuple
 import uuid
+from datetime import datetime
 from django.db import models
 from django.utils.html import mark_safe
 from django.conf import settings
@@ -8,6 +9,8 @@ from django import forms
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.template.defaultfilters import mark_safe
 from django.utils import timezone
+
+from .keycloak import get_cached_keycloak_user
 
 top_up_types = [(1, "Pin"), (2, "Credit card"), (3, "Mollie")]
 
@@ -235,19 +238,57 @@ class IDealTransaction(Transaction):
 
 
 # User needs name, age and balance to be able to make sense to BESTUUUUUR.
+# name, birthday and email are intentionally not stored here -- they are
+# fetched from Keycloak (by user_id, the Keycloak sub) on demand instead.
 class User(models.Model):
-    user_id = models.IntegerField(unique=True)
-    name = models.CharField(max_length=50)
-    birthday = models.DateField()
-    email = models.EmailField(max_length=254, null=True, blank=True)
+    user_id = models.CharField(max_length=255, unique=True)
     balance = models.DecimalField(
         decimal_places=2, max_digits=6, default=Decimal("0.00")
     )
     favorites = models.ManyToManyField(
-        "Product", 
-        blank=True, 
+        "Product",
+        blank=True,
         related_name="favorited_by"
     )
+
+    @property
+    def _keycloak_profile(self):
+        return get_cached_keycloak_user(self.user_id)
+
+    @property
+    def name(self):
+        profile = self._keycloak_profile
+        if not profile:
+            return "(unavailable)"
+        first_name = profile.get("firstName", "")
+        last_name = profile.get("lastName", "")
+        infix = (profile.get("attributes") or {}).get("infix", [None])[0]
+        if infix:
+            full_name = f"{first_name} {infix} {last_name}".strip()
+        else:
+            full_name = f"{first_name} {last_name}".strip()
+        return full_name or profile.get("username") or "(unavailable)"
+
+    @property
+    def email(self):
+        profile = self._keycloak_profile
+        return profile.get("email") if profile else None
+
+    @property
+    def birthday(self):
+        profile = self._keycloak_profile
+        if not profile:
+            return None
+        attrs = profile.get("attributes") or {}
+        raw = attrs.get("birthday") or attrs.get("birth_date")
+        if isinstance(raw, list):
+            raw = raw[0] if raw else None
+        if not raw:
+            return None
+        try:
+            return datetime.strptime(str(raw), "%Y-%m-%d").date()
+        except (ValueError, TypeError):
+            return None
 
     def __str__(self):
         return self.name

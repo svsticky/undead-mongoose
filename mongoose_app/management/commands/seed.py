@@ -1,10 +1,11 @@
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.utils.timezone import make_aware
 from datetime import datetime, timedelta
 from random import randint, seed as randseed
 from faker import Faker
 from faker.providers import misc, color, company, person, barcode, DynamicProvider
 from decimal import Decimal
+from mongoose_app.keycloak import list_keycloak_users
 from mongoose_app.models import (
     Configuration,
     User,
@@ -72,26 +73,30 @@ class Command(BaseCommand):
 
         print("Created 1 Configuration")
 
-        # Users
-        users = [
-            User(
-                user_id,
-                user_id,
-                faker.name(),
-                faker.date_of_birth(minimum_age=15, maximum_age=28),
-                faker.email(),
-                Decimal(0),
+        # Users. name/birthday/email aren't stored -- they come from
+        # Keycloak by user_id -- so seeded users are attached to whatever
+        # real accounts already exist in the connected Keycloak realm,
+        # rather than made-up ids that would just show "(unavailable)".
+        try:
+            keycloak_users = list_keycloak_users(max_results=20)
+        except Exception as e:
+            raise CommandError(
+                f"Could not fetch users from Keycloak ({e}). Seeding needs a reachable "
+                "Keycloak realm (see KEYCLOAK_* settings) with at least one real user in it."
             )
-            for user_id in range(20)
+        if not keycloak_users:
+            raise CommandError(
+                "No users found in Keycloak realm -- create at least one before seeding."
+            )
+
+        users = [
+            User(idx, ku["id"], Decimal(0))
+            for idx, ku in enumerate(keycloak_users)
         ]
         for user in users:
             user.save()
 
-        test_user = randelem(users)
-        test_user.email = "test@svsticky.nl"
-        test_user.save()
-
-        print(f"Created {len(users)} Users")
+        print(f"Created {len(users)} Users (from {len(keycloak_users)} Keycloak accounts)")
 
         # Cards and CardConfirmations
         card_id = 0
@@ -173,7 +178,7 @@ class Command(BaseCommand):
         sale_trans_id = 0
         for user in users:
             if not any(
-                card.user_id.user_id == user.id and card.active for card in cards
+                card.user_id_id == user.id and card.active for card in cards
             ):
                 continue
 
@@ -184,7 +189,7 @@ class Command(BaseCommand):
             first_date = sorted(
                 confirm.timestamp
                 for confirm in confirms
-                if confirm.card.user_id.user_id == user.id
+                if confirm.card.user_id_id == user.id
             )[0]
 
             dates = sorted(

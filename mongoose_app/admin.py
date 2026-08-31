@@ -86,10 +86,10 @@ class SaleTransactionsInline(admin.TabularInline):
 class UserAdmin(admin.ModelAdmin):
     fields = ("user_id", "name", "birthday", "euro_balance", "email")
     list_display = ("name", "birthday", "euro_balance", "email")
-    readonly_fields = ["euro_balance", "birthday", "user_id"]
+    readonly_fields = ["euro_balance", "birthday", "user_id", "name", "email"]
     exclude = ["balance"]
     inlines = [TopUpTransactionsInline, SaleTransactionsInline, CardInline]
-    search_fields = ["name"]
+    search_fields = ["user_id"]
 
 
 @admin.register(Product)

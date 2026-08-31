@@ -25,38 +25,11 @@ koala = get_koala_connection()
 mongoose = get_mongoose_connection()
 
 
-def migrate_email():
-    query = """
-        select members.id, members.email
-        from public.members
-        inner join checkout_balances on members.id = checkout_balances.member_id;
-    """
-
-    with koala:
-        koala_cursor = koala.cursor()
-        koala_cursor.execute(query)
-
-        for user in koala_cursor.fetchall():
-            id = user[0]
-            email = user[1]
-            update_email(id, email)
-
-
-def update_email(id, email):
-    query = """
-        update public.mongoose_app_user
-        set email = %s
-        where user_id = %s;
-    """
-
-    with mongoose:
-        mongoose_cursor = mongoose.cursor()
-        mongoose_cursor.execute(query, (email, id))
-
-
 def migrate_users():
+    # name/birthday/email are no longer stored in mongoose_app_user -- they
+    # are fetched from Keycloak by user_id at read time instead.
     select_members_with_tegoed = """
-        select members.id, members.first_name, members.infix, members.last_name, members.birth_date, checkout_balances.balance, members.email
+        select members.id, checkout_balances.balance
         from public.members
         inner join checkout_balances on members.id = checkout_balances.member_id;
     """
@@ -65,26 +38,18 @@ def migrate_users():
         koala_cursor = koala.cursor()
 
         koala_cursor.execute(select_members_with_tegoed)
-        
+
         for user in koala_cursor.fetchall():
             id = user[0]
-            
-            if user[2] == None:
-                name = f"{user[1]} {user[3]}"
-            else:
-                name = f"{user[1]} {user[2]} {user[3]}"
+            balance = user[1]
 
-            birthday = user[4]
-            balance = user[5]
-            email = user[6]
-
-            create_user_with_tegoed(id, balance, name, birthday, email)
+            create_user_with_tegoed(id, balance)
 
 
-def create_user_with_tegoed(id, balance, name, birthday, email):
+def create_user_with_tegoed(id, balance):
     query = """
-        insert into public.mongoose_app_user(user_id, balance, name, birthday, email)
-        values (%s, %s, %s, %s, %s);
+        insert into public.mongoose_app_user(user_id, balance)
+        values (%s, %s);
     """
 
     with mongoose:

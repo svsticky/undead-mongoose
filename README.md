@@ -34,72 +34,27 @@ Optionally, you might want to populate the mongoose database with random mock da
 ```bash
 uv run --env-file .env manage.py seed
 ```
-Then depending on whether you want to use a local version of koala, you need to do some additional setup:
+Then you need to set up Keycloak: ask a team member for the `mongoose-backend` / `mongoose-frontend` client secrets on the `master` realm at `keycloak.dev.svsticky.nl`, then fill out the `.env` file:
 
-- *If you have a locally running version of koala*: (In development) Change `KOALA_DB_NAME` to `koala-development`
+```env
+ALLOWED_HOSTS=localhost
 
-    Create the `undead_mongoose` user in Koala's database:
+KEYCLOAK_URL=https://keycloak.dev.svsticky.nl
+KEYCLOAK_REALM=master
+KEYCLOAK_CLIENT_ID=mongoose-backend
+KEYCLOAK_CLIENT_SECRET=<secret from staging>
 
-    ```sql
-    CREATE USER undead_mongoose WITH PASSWORD 'mongoose123';
-    ```
+OIDC_RP_CLIENT_ID=mongoose-frontend
+OIDC_RP_CLIENT_SECRET=<secret from staging>
 
-    Configure privileges for the `undead_mongoose` user in Koala's database (Replace `koala` with `koala-development` in development):
+OIDC_OP_AUTHORIZATION_ENDPOINT=https://keycloak.dev.svsticky.nl/realms/master/protocol/openid-connect/auth
+OIDC_OP_TOKEN_ENDPOINT=https://keycloak.dev.svsticky.nl/realms/master/protocol/openid-connect/token
+OIDC_OP_USER_ENDPOINT=https://keycloak.dev.svsticky.nl/realms/master/protocol/openid-connect/userinfo
+OIDC_OP_JWKS_ENDPOINT=https://keycloak.dev.svsticky.nl/realms/master/protocol/openid-connect/certs
+OIDC_OP_LOGOUT_ENDPOINT=https://keycloak.dev.svsticky.nl/realms/master/protocol/openid-connect/logout
+```
 
-    ```sql
-    \c "koala"
-    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO undead_mongoose;
-    ```
-
-    To enable oauth, you should go to koala.rails.local:3000/api/oauth/applications and create a new application with {{ canonical_hostname }}/oidc/callback/ as the callback url.
-
-    It's also possible to generate the client through your CLI in the `constipiated-koala` project by running the command below
-
-    ```bash
-    bundle exec rake "doorkeeper:create[undead Mongoose, http://localhost:8000/oidc/callback/, openid profile email member-read]"
-    ```
-
-    Ensure scopes 'openid member-read email profile' are present. Also ensure to copy the application_id and secret and put them in your `.env` file.
-
-    ```ini
-    API_TOKEN=koala
-
-    OIDC_RP_CLIENT_ID=example_id
-    OIDC_RP_CLIENT_SECRET=example_secret
-
-    ALLOWED_HOSTS=localhost
-    ```
-
-    Make sure that the `OIDC_OP_*_ENDPOINT` endpoints are correct. The ones in sample.env should suffice.
-
-    Alter Koala's `.env` file such that the following keys have the following values:
-
-    ```ini
-    CHECKOUT_TOKEN=koala
-    ```
-
-- *Alternatively, use the staging version of koala:* create an oauth application for your mongoose installation via <https://koala.dev.svsticky.nl/api/oauth/applications>. Make sure you log in with the <dev@svsticky.nl> account to access the page. Create a new application with the following information:
-  - Confidential: `true`
-  - Callback url: `http://localhost:8000/oidc/callback/`
-  - Scopes: `openid profile email member-read`
-  
-  Copy the application id and secret into the `.env` file and make sure you update the oauth urls to point to koala.dev.svsticky.nl.
-
-  Then complete the `.env` file by filling out the following values:
-
-  ```env
-  USER_URL=https://koala.dev.svsticky.nl
-
-  ALLOWED_HOSTS=localhost
-  OIDC_RP_CLIENT_ID=<secret from koala>
-  OIDC_RP_CLIENT_SECRET=<secret from koala>
-
-  OIDC_OP_AUTHORIZATION_ENDPOINT=https://koala.dev.svsticky.nl/api/oauth/authorize
-  OIDC_OP_TOKEN_ENDPOINT=https://koala.dev.svsticky.nl/api/oauth/token
-  OIDC_OP_USER_ENDPOINT=https://koala.dev.svsticky.nl/oauth/userinfo
-  OIDC_OP_JWKS_ENDPOINT=https://koala.dev.svsticky.nl/oauth/discovery/keys
-  OIDC_OP_LOGOUT_ENDPOINT=https://koala.dev.svsticky.nl/signout
-  ```
+Make sure `mongoose-frontend`'s redirect URIs in that realm include `http://localhost:8000/oidc/callback/`.
 
 ### iDeal payments
 
@@ -115,7 +70,7 @@ To do test payments, you need to use [ngrok](https://ngrok.com/) to forward your
 ngrok http http://localhost:8000
 ```
 
-ngrok will open a tunnel and bind your mongoose to a public url, update the `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS` fields to include the url from ngrok. Lastly, update the koala oauth application (at `<koala_url>/api/oauth/applications` as explained above) to use the ngrok url as an additional callback uri.
+ngrok will open a tunnel and bind your mongoose to a public url, update the `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS` fields to include the url from ngrok. Lastly, add the ngrok url's `/oidc/callback/` as an additional redirect URI on the `mongoose-frontend` client in Keycloak (as explained above).
 
 Visiting the ngrok url should give your mongoose installation, and you can just use that url to continue development.
 

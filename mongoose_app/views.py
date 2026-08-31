@@ -10,6 +10,7 @@ from django.conf import settings
 from admin_board_view.forms import TopUpForm
 from admin_board_view.middleware import dashboard_authenticated
 from .middleware import authenticated
+from .keycloak import get_keycloak_user_by_student_number
 from .models import (
     CardConfirmation,
     Category,
@@ -23,7 +24,7 @@ from .models import (
     User,
     Configuration,
 )
-from datetime import datetime, date
+from datetime import date
 from django.views.decorators.csrf import csrf_exempt
 import requests
 import threading
@@ -75,7 +76,7 @@ def delete_card(request):
         return HttpResponse("Unknown card uuid", status=404)
 
     card_user: User = card.user_id
-    if request.user.is_superuser or card_user.email == request.user.email:
+    if request.user.is_superuser or card_user.user_id == request.user.username:
         card.delete()
         return HttpResponse(status=200)
 
@@ -96,7 +97,7 @@ def change_card_name(request):
 
         # Check if card belongs to user or user is admin
         card_user: User = card.user_id
-        if "name" in request.GET and (request.user.is_superuser or card_user.email == request.user.email):
+        if "name" in request.GET and (request.user.is_superuser or card_user.user_id == request.user.username):
             # Update card name
             card.card_name = request.GET.get("name")
             card.save()
@@ -115,12 +116,17 @@ def get_products(request):
     card_id = request.GET.get("uuid")
     card = Card.objects.filter(card_id=card_id).first()
     user = User.objects.filter(user_id=card.user_id.user_id).first()
-    # Calc age of user based on birthday
+    # Calc age of user based on birthday. If Keycloak can't tell us their
+    # birthday (unreachable, or the account was deleted there), treat them
+    # as underage rather than guessing.
     today = date.today()
+    birthday = user.birthday
     age = (
         today.year
-        - user.birthday.year
-        - ((today.month, today.day) < (user.birthday.month, user.birthday.day))
+        - birthday.year
+        - ((today.month, today.day) < (birthday.month, birthday.day))
+        if birthday
+        else 0
     )
     alc_time = Configuration.objects.get(pk=1).alc_time
 
@@ -220,7 +226,7 @@ def update_balance(request):
     """
     try:
         body = request.POST.dict()
-        user = User.objects.get(name=body["user"])
+        user = User.objects.get(user_id=body["user_id"])
 
         transaction = TopUpTransaction.objects.create(
             user_id=user, transaction_sum=Decimal(body["balance"]), type=body["type"]
@@ -237,7 +243,7 @@ def update_balance(request):
         )
     except Exception as e:
         return JsonResponse(
-            {"msg": f"Balance for {body['user']} could not be updated."},
+            {"msg": f"Balance for {body['user_id']} could not be updated."},
             status=400,
             safe=False,
         )
@@ -251,7 +257,7 @@ def register_card(request):
     Reached when student number is entered for a certain card.
     Both should be provided in request.
     Then:
-    - Ask koala for user info
+    - Ask keycloak for user info
     - If user does not exist here, create it
     - Else add card to user.
     """
@@ -267,44 +273,40 @@ def register_card(request):
     if not card == None:
         return HttpResponse(status=409)
 
-    # Obtain user information from Koala (or any other central member base)
-    koala_response = requests.get(
-        settings.USER_URL + "/api/internal/member_by_studentid",
-        params={"student_number": student_nr},
-        headers={"Authorization": settings.USER_TOKEN},
-    )
-    # If user is not found in database, we cannot create user here.
-    if koala_response.status_code == 204:
+    try:
+        int(student_nr)
+    except ValueError:
+        return HttpResponse("Invalid student number format", status=400)
+
+    try:
+        keycloak_user = get_keycloak_user_by_student_number(student_nr)
+    except Exception as e:
+        print(f"Keycloak query failed: {e}")
+        return HttpResponse("Internal server error during user lookup", status=500)
+
+    if keycloak_user is None:
         return HttpResponse(status=404)  # Sloth expects a 404.
 
-    # Get user info.
-    koala_response = koala_response.json()
-    user_id = koala_response["id"]
-    # Check if user exists.
-    user = User.objects.filter(user_id=user_id).first()
+    email = keycloak_user.get("email")
+    if not email:
+        return HttpResponse("User email not found in Keycloak", status=400)
+
+    user_id = keycloak_user.get("id")
+
+    user = User.objects.filter(user_id=user_id).first() if user_id else None
+
     # If so, add the card to the already existing user.
     if not user == None:
         card = Card.objects.create(card_id=card_id, active=False, user_id=user)
-        send_confirmation(koala_response["email"], card)
-    # Else, we first create the user based on the info from koala.
+        send_confirmation(email, card)
+    # Else, we first create the user based on the info from keycloak.
     else:
-        first_name = koala_response["first_name"]
-        infix = None
-        if "infix" in koala_response:
-            infix = koala_response["infix"]
-        last_name = koala_response["last_name"]
-        born = datetime.strptime(koala_response["birth_date"], "%Y-%m-%d")
+        if not user_id:
+            return HttpResponse("User id not found in Keycloak", status=400)
 
-        user = User.objects.create(
-            user_id=user_id,
-            name=f"{first_name} {infix} {last_name}"
-            if infix
-            else f"{first_name} {last_name}",
-            birthday=born,
-            email=koala_response["email"],
-        )
+        user = User.objects.create(user_id=user_id)
         card = Card.objects.create(card_id=card_id, active=False, user_id=user)
-        send_confirmation(koala_response["email"], card)
+        send_confirmation(email, card)
     # If that all succeeds, we return CREATED.
     return HttpResponse(status=201)
 
@@ -351,18 +353,6 @@ def async_on_webhook(request):
             # TODO: What if this happens?
             if koala_response.status_code == 204:
                 user.delete()
-            print(koala_response.ok)
-            if koala_response.ok:
-                print(koala_response)
-                koala_response = koala_response.json()
-                first_name = koala_response["first_name"]
-                infix = koala_response["infix"] if "infix" in koala_response else ""
-                last_name = koala_response["last_name"]
-                user.name = f"{first_name} {infix} {last_name}"
-                user.birthday = datetime.strptime(
-                    koala_response["birth_date"], "%Y-%m-%d"
-                )
-                user.save()
 
     return HttpResponse(status=200)
 
@@ -402,7 +392,7 @@ def topup(request):
     bound_form = TopUpForm(request.POST)
 
     if bound_form.is_valid():
-        user = User.objects.get(email=request.user)
+        user = User.objects.get(user_id=request.user.username)
         transaction_amount = bound_form.cleaned_data["amount"]
         transaction = IDealTransaction.objects.create(
             user_id=user, transaction_sum=transaction_amount

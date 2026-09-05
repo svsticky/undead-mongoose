@@ -49,14 +49,18 @@ if (userSearchInput && userSearchInput.tagName === "INPUT") {
         url: `/users/search?q=${encodeURIComponent(term)}`,
         type: "GET",
         success: (response) => {
+          // Discard replies to a stale query -- the input may have changed
+          // (and a newer request fired) while this one was in flight.
+          if (userSearchInput.value.trim() !== term) {
+            return;
+          }
           const options = document.getElementById("userOptions");
-          options.innerHTML = "";
-          response.results.forEach(user => {
+          options.replaceChildren(...response.results.map(user => {
             const option = document.createElement("option");
             option.id = user.id;
             option.value = user.name;
-            options.appendChild(option);
-          });
+            return option;
+          }));
         }
       });
     }, 250);

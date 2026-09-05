@@ -136,11 +136,7 @@
   <div class="card-body">
     <div class="card-text m-2">
       <input class="form-control mb-3" list="userOptions" id="user" placeholder="Search user...">
-      <datalist id="userOptions">
-        {% for user in users %}
-          <option id="{{ user.id }}" value="{{ user }}">
-        {% endfor %}
-      </datalist>
+      <datalist id="userOptions"></datalist>
     </div>
   </div>
   <div class="card-footer btn-group d-flex ">

@@ -44,7 +44,7 @@ KEYCLOAK_REALM=master
 KEYCLOAK_CLIENT_ID=mongoose-backend
 KEYCLOAK_CLIENT_SECRET=<secret from staging>
 
-OIDC_RP_CLIENT_ID=mongoose-frontend
+OIDC_RP_CLIENT_ID=oauth2_proxy
 OIDC_RP_CLIENT_SECRET=<secret from staging>
 
 OIDC_OP_AUTHORIZATION_ENDPOINT=https://keycloak.dev.svsticky.nl/realms/master/protocol/openid-connect/auth

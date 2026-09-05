@@ -58,6 +58,19 @@ def get_keycloak_user_by_id(user_id):
     return response.json()
 
 
+def _keycloak_user_cache_key(user_id):
+    return f"keycloak-user:{user_id}"
+
+
+def cache_keycloak_user(user_id, profile):
+    """
+    Seeds the same cache get_cached_keycloak_user reads from. Used to make
+    a bulk lookup (e.g. search_keycloak_users) pay for each profile once,
+    instead of every later get_cached_keycloak_user call re-fetching it.
+    """
+    cache.set(_keycloak_user_cache_key(user_id), profile or False, KEYCLOAK_USER_CACHE_SECONDS)
+
+
 def get_cached_keycloak_user(user_id):
     """
     Same as get_keycloak_user_by_id, but cached for a short time so pages
@@ -71,7 +84,7 @@ def get_cached_keycloak_user(user_id):
     aren't cached, so the next request retries rather than being stuck
     showing "(unavailable)" for the full TTL after a transient blip.
     """
-    cache_key = f"keycloak-user:{user_id}"
+    cache_key = _keycloak_user_cache_key(user_id)
     cached = cache.get(cache_key)
     if cached is not None:
         return cached or None
@@ -84,8 +97,29 @@ def get_cached_keycloak_user(user_id):
 
     # Cache a sentinel for "not found" too, so a deleted/legacy id doesn't
     # get looked up again on every single access within the TTL.
-    cache.set(cache_key, user or False, KEYCLOAK_USER_CACHE_SECONDS)
+    cache_keycloak_user(user_id, user)
     return user
+
+
+def search_keycloak_users(term, max_results=20):
+    """
+    Free-text search against username/first name/last name/email, used to
+    power the "Find user" autocomplete on demand. Unlike looping over every
+    local User and resolving each one's profile, this fetches only the
+    (bounded) set of profiles that actually match what was typed.
+    """
+    keycloak_url = settings.KEYCLOAK_URL
+    realm = settings.KEYCLOAK_REALM
+    token = _get_admin_token()
+
+    users_url = f"{keycloak_url.rstrip('/')}/admin/realms/{realm}/users"
+    response = requests.get(
+        users_url,
+        headers={"Authorization": f"Bearer {token}", "Accept": "application/json"},
+        params={"search": term, "max": max_results},
+    )
+    response.raise_for_status()
+    return response.json()
 
 
 def list_keycloak_users(max_results=100):

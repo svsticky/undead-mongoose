@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand, CommandError
+from django.db import connection
 from django.utils.timezone import make_aware
 from datetime import datetime, timedelta
 from random import randint, seed as randseed
@@ -21,6 +22,22 @@ from mongoose_app.models import (
     PaymentStatus,
 )
 
+# Models seeded with explicit integer pks -- their auto-increment sequences
+# need resyncing afterwards, or the next ordinary (non-seed) insert collides
+# with an existing id. IDealTransaction is excluded: its pk is a UUID.
+MODELS_WITH_EXPLICIT_PKS = [
+    Configuration,
+    Category,
+    VAT,
+    Product,
+    User,
+    Card,
+    CardConfirmation,
+    TopUpTransaction,
+    SaleTransaction,
+    ProductTransactions,
+]
+
 
 class Command(BaseCommand):
     help = "Seed the database"
@@ -34,6 +51,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.remove_data()
         self.seed(options["seed"])
+        self.fix_sequences()
 
     def remove_data(self):
         models = [
@@ -52,6 +70,24 @@ class Command(BaseCommand):
         for model in models:
             model.objects.all().delete()
         self.stdout.write(self.style.SUCCESS("Removed all model records"))
+
+    def fix_sequences(self):
+        # Django's own sequence_reset_sql breaks when the seeded ids start
+        # at 0 (setval(..., 0, true) is out of range for a sequence whose
+        # minvalue is 1), which is exactly what this command does. Instead,
+        # point the sequence's next value at max(id) + 1 directly, using
+        # is_called=false so nextval() returns that value unchanged rather
+        # than value + 1.
+        with connection.cursor() as cursor:
+            for model in MODELS_WITH_EXPLICIT_PKS:
+                table = model._meta.db_table
+                column = model._meta.pk.column
+                cursor.execute(
+                    f'SELECT setval(pg_get_serial_sequence(%s, %s), '
+                    f'(SELECT COALESCE(MAX("{column}"), 0) + 1 FROM "{table}"), false)',
+                    [table, column],
+                )
+        self.stdout.write(self.style.SUCCESS("Synced primary key sequences"))
 
     def seed(self, seed):
         def print(s):

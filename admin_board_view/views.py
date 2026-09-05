@@ -15,6 +15,7 @@ from .models import *
 from mollie.api.client import Client
 from django.conf import settings
 from .forms import TopUpForm
+from mongoose_app.keycloak import search_keycloak_users, cache_keycloak_user
 
 
 def get_user_home_context(request):
@@ -108,7 +109,6 @@ def index(request):
             product_sale_groups.append({"key": designation, "values": list(member_group)})
 
         context |= {
-            "users": User.objects.all(),
             "product_amount": product_amount,
             "recent_sales": product_sale_groups[:5],
             "total_balance": total_balance,
@@ -237,16 +237,58 @@ def users(request, user_id=None):
             },
         )
     else:
-        users = list(User.objects.all())
-
         name_query = request.GET.get("name")
         if name_query:
-            users = [u for u in users if name_query.lower() in u.name.lower()]
+            try:
+                profiles = search_keycloak_users(name_query)
+            except Exception as e:
+                print(e)
+                profiles = []
 
-        users.sort(key=lambda u: u.name.lower())
+            for profile in profiles:
+                cache_keycloak_user(profile["id"], profile)
+
+            users = list(
+                User.objects.filter(user_id__in=[p["id"] for p in profiles]).order_by("id")
+            )
+        else:
+            users = list(User.objects.all().order_by("id"))
 
         user_page = create_paginator(users, request.GET.get("users"), p_len=15)
-        return render(request, "user.html", {"users": users, "user_page": user_page})
+        return render(request, "user.html", {"user_page": user_page})
+
+
+@dashboard_admin
+def user_search(request):
+    """
+    Bounded autocomplete for the "Find user" / "Add balance to user" inputs:
+    resolves Keycloak profiles only for users matching what was typed, so
+    it stays cheap regardless of how many members are registered.
+    """
+    term = request.GET.get("q", "").strip()
+    if not term:
+        return JsonResponse({"results": []})
+
+    try:
+        profiles = search_keycloak_users(term)
+    except Exception as e:
+        print(e)
+        return JsonResponse({"results": []})
+
+    local_users = {
+        u.user_id: u
+        for u in User.objects.filter(user_id__in=[p["id"] for p in profiles])
+    }
+
+    results = []
+    for profile in profiles:
+        user = local_users.get(profile["id"])
+        if not user:
+            continue
+        cache_keycloak_user(user.user_id, profile)
+        results.append({"id": user.id, "name": user.name})
+
+    return JsonResponse({"results": results})
 
 
 @dashboard_admin

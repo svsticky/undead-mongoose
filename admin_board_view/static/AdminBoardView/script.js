@@ -33,6 +33,36 @@ function showConfirmation(title, body, id) {
   modal.show();
 }
 
+// Populate the user search datalist on demand, instead of preloading every
+// registered user's Keycloak profile on every page load.
+const userSearchInput = document.getElementById("user");
+if (userSearchInput && userSearchInput.tagName === "INPUT") {
+  let userSearchTimeout;
+  userSearchInput.addEventListener("input", () => {
+    const term = userSearchInput.value.trim();
+    clearTimeout(userSearchTimeout);
+    if (term.length < 2) {
+      return;
+    }
+    userSearchTimeout = setTimeout(() => {
+      $.ajax({
+        url: `/users/search?q=${encodeURIComponent(term)}`,
+        type: "GET",
+        success: (response) => {
+          const options = document.getElementById("userOptions");
+          options.innerHTML = "";
+          response.results.forEach(user => {
+            const option = document.createElement("option");
+            option.id = user.id;
+            option.value = user.name;
+            options.appendChild(option);
+          });
+        }
+      });
+    }, 250);
+  });
+}
+
 // Filter user page
 document.getElementById("user").addEventListener("keypress", e => {
   if (e.key === "Enter") {

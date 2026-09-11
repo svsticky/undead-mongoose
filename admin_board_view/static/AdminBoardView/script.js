@@ -58,6 +58,7 @@ if (userSearchInput && userSearchInput.tagName === "INPUT") {
           options.replaceChildren(...response.results.map(user => {
             const option = document.createElement("option");
             option.id = user.id;
+            option.dataset.userId = user.user_id;
             option.value = user.name;
             return option;
           }));
@@ -104,23 +105,39 @@ const confirm_charge = document.getElementById("confirm-charge");
 if (confirm_charge) {
   confirm_charge.addEventListener("click", e => {
     const amount = document.getElementById("amount").value;
-    const user = document.getElementById("user").value || document.getElementById("user").innerHTML;
+    const userElement = document.getElementById("user");
     const type = document.getElementById("type").value;
+
+    // On a specific user's page "user" is a heading carrying that user's
+    // Keycloak id; on the search page it's an input and the id has to be
+    // looked up from the option the typed name matched.
+    let userId = userElement.dataset.userId;
+    if (!userId) {
+      const name = userElement.value;
+      const escapedName = name.replace("'", "\\'");
+      const selected_user = document.getElementById("userOptions").querySelector(`[value='${escapedName}']`);
+      userId = selected_user ? selected_user.dataset.userId : null;
+    }
+
+    if (!userId) {
+      showToast("Updated balance - Failed", "Select a user from the list first.");
+      return;
+    }
 
     $.ajax({
       url: `/api/balance`,
       data: {
         "csrfmiddlewaretoken": csrf_token,
-        "user": user,
+        "user_id": userId,
         "type": type,
         "balance": amount
       },
       type: "POST",
       success: (response) => {
         showToast("Updated balance", response.msg);
-      }, 
+      },
       error: (response) => {
-        showToast("Updated balance - Failed", response.responseJSON.msg);
+        showToast("Updated balance - Failed", response.responseJSON?.msg || "Something went wrong.");
       }
     });
   });

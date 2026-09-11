@@ -286,7 +286,7 @@ def user_search(request):
         if not user:
             continue
         cache_keycloak_user(user.user_id, profile)
-        results.append({"id": user.id, "name": user.name})
+        results.append({"id": user.id, "user_id": user.user_id, "name": user.name})
 
     return JsonResponse({"results": results})
 

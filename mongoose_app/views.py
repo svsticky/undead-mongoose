@@ -243,7 +243,7 @@ def update_balance(request):
         )
     except Exception as e:
         return JsonResponse(
-            {"msg": f"Balance for {body['user_id']} could not be updated."},
+            {"msg": f"Balance for {body.get('user_id')} could not be updated."},
             status=400,
             safe=False,
         )

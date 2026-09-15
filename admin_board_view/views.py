@@ -507,7 +507,7 @@ def export_sale_transactions(request):
                     if export_type == "pin"
                     else f"topup {t.user_id.name}"
                 )
-                response_string += f'"",8002,Mongoose - {name},0,{"{:.2f}".format(t.transaction_sum)},""\n'
+                response_string += f'"",08030,Mongoose - {name},0,{"{:.2f}".format(t.transaction_sum)},""\n'
 
             # Add transaction fee row mollie payments
             if export_type == "mollie":

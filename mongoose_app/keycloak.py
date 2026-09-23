@@ -101,7 +101,7 @@ def get_cached_keycloak_user(user_id):
     return user
 
 
-def search_keycloak_users(term, max_results=20):
+def search_keycloak_users(term, max_results=100):
     """
     Free-text search against username/first name/last name/email, used to
     power the "Find user" autocomplete on demand. Unlike looping over every
@@ -112,11 +112,16 @@ def search_keycloak_users(term, max_results=20):
     realm = settings.KEYCLOAK_REALM
     token = _get_admin_token()
 
+    # Wrap each word in wildcards (*) so Keycloak performs a substring (CONTAINS)
+    # search instead of a prefix search. This ensures names with infixes match.
+    words = term.strip().split()
+    wildcard_term = " ".join(f"*{w.strip('*')}*" for w in words) if words else term
+
     users_url = f"{keycloak_url.rstrip('/')}/admin/realms/{realm}/users"
     response = requests.get(
         users_url,
         headers={"Authorization": f"Bearer {token}", "Accept": "application/json"},
-        params={"search": term, "max": max_results},
+        params={"search": wildcard_term, "max": max_results},
     )
     response.raise_for_status()
     return response.json()

@@ -140,6 +140,7 @@ def products(request):
 
     product, product_sales = None, None
     pf = ProductForm
+    sf = StockForm
     if request.GET:
         if "edit" in request.GET and request.GET["edit"] != "0":
             product = Product.objects.get(id=request.GET["edit"])
@@ -151,6 +152,9 @@ def products(request):
                 "all": transactions,
                 "sum": transactions.values("product_price").annotate(sum=Sum("amount")),
             }
+        if "stock" in request.GET and request.GET["stock"] != "0":
+            product = Product.objects.get(id=request.GET["stock"])
+            sf = StockForm(instance=product)
 
     products = Product.objects.all().order_by("name")
     categories = Category.objects.all()
@@ -161,6 +165,7 @@ def products(request):
             "products": products,
             "categories": categories,
             "product_form": pf,
+            "stock_form": sf,
             "current_product": product,
             "product_sales": product_sales,
         },

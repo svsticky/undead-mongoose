@@ -16,6 +16,7 @@
         <tr>
           <th>Image</th>
           <th>Name</th>
+          <th>Kelder/Kamer</th>
           <th>Price</th>
           <th>Category</th>
           <th>Actions</th>
@@ -26,6 +27,14 @@
           <tr id="{{ product.id }}" class="product-row">
             <td class="product-image {% if not product.enabled %}disabled-product{% endif %}">{{ product.image_view }}</td>
             <td class="product-name">{{ product.name }}</td>
+            <td>
+                <div class="mb-1">
+                    <h>{{ product.stockKelder }}/{{ product.stockKamer }}</h>
+                </div>
+                <div>
+                    <a href="/products?stock={{ product.id }}"><button class="btn btn-info product-stock">Edit stock</button></a>
+                </div>
+            </td>
             <td>{{ product.euro }}</td>
             <td>{{ product.category }}</td>
             <td>
@@ -42,6 +51,29 @@
         {% endfor %}
       </tbody>
     </table>    
+  </div>
+</div>
+<div class="modal fade" id="stock-modal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" enctype="multipart/form-data">
+      <div class="modal-header">
+        <h5 class="modal-title">Edit product stock data</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+          {% csrf_token %}
+          {{ stock_form.as_p }}
+          <button type="button" class="btn btn-info product-stock">test</button>
+      </div>
+      <div class="modal-footer">
+        <div class="input-group mb-3 btn-group">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-success">Save stock</button>
+        </div>
+      </div>
+      </form>
+    </div>
   </div>
 </div>
 <div class="modal fade" id="product-modal" tabindex="-1">

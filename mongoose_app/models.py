@@ -34,6 +34,8 @@ class Category(models.Model):
 
 class Product(models.Model):
     name = models.CharField(max_length=60)
+    stockKelder = models.IntegerField(default=0)
+    stockKamer = models.IntegerField(default=0)
     price = models.DecimalField(decimal_places=2, max_digits=6)
     image = models.ImageField(null=True, blank=True)
     category = models.ForeignKey(
@@ -378,6 +380,19 @@ class ProductForm(forms.ModelForm):
         model = Product
         fields = ["name", "image", "price", "vat", "category", "enabled"]
 
+class StockForm(forms.ModelForm):
+    stockKelder = forms.IntegerField(
+        widget=forms.TextInput(attrs={"placeholder": "15", "class": "form-control"}),
+        label=mark_safe('<label class="form-label">Kelder</label>'),
+    )
+    stockKamer = forms.IntegerField(
+        widget=forms.TextInput(attrs={"placeholder": "15", "class": "form-control"}),
+        label=mark_safe('<label class="form-label">Kamer</label>'),
+    )
+
+    class Meta:
+        model = Product
+        fields = ["stockKelder","stockKamer"]
 
 class Configuration(models.Model):
     alc_time = models.TimeField(

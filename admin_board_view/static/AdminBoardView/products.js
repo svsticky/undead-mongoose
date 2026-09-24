@@ -1,5 +1,6 @@
 const productModal = new bootstrap.Modal(document.getElementById('product-modal'));
 const salesModal = new bootstrap.Modal(document.getElementById('sales-modal'));
+const stockModal = new bootstrap.Modal(document.getElementById('stock-modal'));
 
 // Toggle product
 const toggle_btns = document.getElementsByClassName("toggle-product");
@@ -18,7 +19,7 @@ if (toggle_btns) {
         document.getElementById(btn.name).querySelector(".product-image").classList.toggle("disabled-product");
         btn.innerHTML = btn.innerHTML == "Deactivate" ? "Reactivate" : "Deactivate";
       });
-    });    
+    });
   });
 }
 
@@ -32,7 +33,7 @@ if (delete_btns) {
         `Are you sure you want to remove this product?`,
         btn.name
       )
-    });    
+    });
   });
 }
 
@@ -72,7 +73,13 @@ if (params.get("edit")) {
   productModal.show()
 } else if (params.get("sales")) {
   salesModal.show()
+} else if (params.get("stock")) {
+  stockModal.show()
 }
+
+document.getElementById('stock-modal').addEventListener('hidden.bs.modal', function (event) {
+  window.location.search = "";
+});
 
 document.getElementById('product-modal').addEventListener('hidden.bs.modal', function (event) {
   window.location.search = "";

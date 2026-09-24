@@ -196,11 +196,13 @@ class Command(BaseCommand):
         products = []
         for id in range(0, 30):
             price = randprice(0, 10)
+            stockKamer = randint(0,30)
+            stockKelder = randint(0,100)
             category = randelem(categories)
             vat = randelem(vats)
             enabled = randint(0, 10) > 3
             product = Product(
-                id, faker.catch_phrase(), price, None, category.id, vat.id, enabled
+                id, faker.catch_phrase(), stockKelder, stockKamer, price, None, category.id, vat.id, enabled
             )
             product.save()
             products.append(product)

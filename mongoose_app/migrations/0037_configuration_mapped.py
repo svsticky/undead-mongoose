@@ -12,12 +12,12 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name='configuration',
-            name='wrapped_end',
+            name='mapped_end',
             field=models.DateField(blank=True, null=True),
         ),
         migrations.AddField(
             model_name='configuration',
-            name='wrapped_start',
+            name='mapped_start',
             field=models.DateField(blank=True, null=True),
         ),
     ]

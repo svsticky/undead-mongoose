@@ -1,4 +1,4 @@
-/* Color of the current board, update this when a new board starts. Mongoose Wrapped derives its palette from it too. */
+/* Color of the current board, update this when a new board starts. Mongoose Mapped derives its palette from it too. */
 :root {
   --board-color: #b21b21;
 }

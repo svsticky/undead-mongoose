@@ -85,21 +85,21 @@ def get_user_home_context(request):
         "TRANSACTION_FEE": settings.TRANSACTION_FEE,
         "error": request.GET.get("error"),
         "cards": cards,
-        "wrapped_open": wrapped_open(),
+        "mapped_open": mapped_open(),
     }
 
 
-def wrapped_open(today=None):
-    """Mongoose Wrapped is shown yearly between the configured start/end day (default: June)."""
+def mapped_open(today=None):
+    """Mongoose Mapped is shown yearly between the configured start/end day (default: June)."""
     today = today or timezone.localdate()
     config = Configuration.objects.first()
-    start = (config and config.wrapped_start) or date(today.year, 6, 1)
-    end = (config and config.wrapped_end) or date(today.year, 6, 30)
+    start = (config and config.mapped_start) or date(today.year, 6, 1)
+    end = (config and config.mapped_end) or date(today.year, 6, 30)
     # Compare month/day only so the board's dates keep working in later years.
     return (start.month, start.day) <= (today.month, today.day) <= (end.month, end.day)
 
 
-def wrapped_stats(user, today=None):
+def mapped_stats(user, today=None):
     """Purchase stats for `user` over the current academic year (from 1 September)."""
     today = today or timezone.localdate()
     since = date(today.year - (today.month < 9), 9, 1)
@@ -135,22 +135,22 @@ def wrapped_stats(user, today=None):
 
 
 @dashboard_authenticated
-def wrapped(request):
+def mapped(request):
     # Only ever the logged-in user's own data; board members may preview outside the window.
-    if not (wrapped_open() or request.user.is_superuser):
+    if not (mapped_open() or request.user.is_superuser):
         return HttpResponseRedirect("/")
     user = User.objects.filter(user_id=request.user.username).first()
     if not user:
         return HttpResponseRedirect("/")
-    return render(request, "wrapped.html", {"user_info": user, **wrapped_stats(user)})
+    return render(request, "mapped.html", {"user_info": user, **mapped_stats(user)})
 
 
-def wrapped_demo(request):
-    """Wrapped with fake data, for working on the design locally. Only exists when DEBUG is on."""
+def mapped_demo(request):
+    """Mapped with fake data, for working on the design locally. Only exists when DEBUG is on."""
     if not settings.DEBUG:
         raise Http404
     products = [("Cola Zero", 61), ("Mars", 40), ("Tosti", 22), ("Fanta Cassis", 18), ("Twix", 9)]
-    return render(request, "wrapped.html", {
+    return render(request, "mapped.html", {
         "user_info": {"name": "Demo"},
         "since": date(timezone.localdate().year - 1, 9, 1),
         "visits": 142,
@@ -454,8 +454,8 @@ def settings_update(request):
         configuration = Configuration.objects.get(pk=1)
         settings = json.loads(request.POST.dict()["settings"])
         configuration.alc_time = settings["alc_time"]
-        configuration.wrapped_start = settings.get("wrapped_start")
-        configuration.wrapped_end = settings.get("wrapped_end")
+        configuration.mapped_start = settings.get("mapped_start")
+        configuration.mapped_end = settings.get("mapped_end")
         configuration.save()
         return JsonResponse({"msg": "Updated the mongoose configuration"})
     except Exception as e:

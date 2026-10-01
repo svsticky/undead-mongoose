@@ -154,8 +154,8 @@ if (updateSettings) {
   updateSettings.addEventListener("click", e => {
     const data = {
       alc_time: document.getElementById("alc_time").value,
-      wrapped_start: document.getElementById("wrapped_start").value || null,
-      wrapped_end: document.getElementById("wrapped_end").value || null,
+      mapped_start: document.getElementById("mapped_start").value || null,
+      mapped_end: document.getElementById("mapped_end").value || null,
     };
 
     $.ajax({

@@ -5,7 +5,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#000000" />
-  <title>Mongoose Wrapped</title>
+  <title>Mongoose Mapped</title>
   <link rel="icon" type="image/x-icon" href="{% static 'AdminBoardView/undead_mongoose.png' %}">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&display=swap" crossorigin="anonymous">
   <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.13/dist/html-to-image.js" integrity="sha384-Tha/42qsYmpYmQ07pX+nJzkKumO0BzKJxK/uzVc7xyBQxVCUgQBhQIG8L7vXK+9C" crossorigin="anonymous" defer></script>
@@ -96,33 +96,33 @@
 <div class="stage" id="stage">
   <div class="top">
     <div class="bars" id="bars"></div>
-    <div class="head"><span>🦦 Mongoose Wrapped</span><span>
+    <div class="head"><span>🦦 Mongoose Mapped</span><span>
       <button id="share-open" aria-label="Share to Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></button>
       <a href="/" aria-label="Close">×</a>
     </span></div>
   </div>
 
   <section class="slide" style="--bg:var(--board); --fg:#fbf1e3; --accent:var(--board-deep);">
-    <div class="deco">{% include "wrapped/sticky_head.svg" %}</div>
-    <div class="brand">{% include "wrapped/sticky_logo.svg" %}</div>
+    <div class="deco">{% include "mapped/sticky_head.svg" %}</div>
+    <div class="brand">{% include "mapped/sticky_logo.svg" %}</div>
     <p class="kicker pop">Hey {{ user_info.name }} 👋</p>
     <p class="huge pop" style="--d:.15s">Your {{ since.year }}/{% now "y" %}</p>
-    <p class="big pop" style="--d:.3s">Mongoose Wrapped</p>
+    <p class="big pop" style="--d:.3s">Mongoose Mapped</p>
     <p class="small pop" style="--d:.5s">Tap to continue →</p>
   </section>
 
   {% if visits %}
   <section class="slide" style="--bg:#fbf1e3; --fg:var(--board); --accent:#f3dcc4;">
-    <div class="deco alt">{% include "wrapped/sticky_head.svg" %}</div>
-    <div class="brand">{% include "wrapped/sticky_logo.svg" %}</div>
+    <div class="deco alt">{% include "mapped/sticky_head.svg" %}</div>
+    <div class="brand">{% include "mapped/sticky_logo.svg" %}</div>
     <p class="kicker pop">This year you tapped your card at the Mongoose</p>
     <p class="huge pop" style="--d:.2s"><span data-count="{{ visits }}">{{ visits }}</span>×</p>
     <p class="kicker pop" style="--d:.4s">That's {{ items }} snacks and drinks.</p>
   </section>
 
   <section class="slide" style="--bg:#1a1a2e; --fg:#ffc93c; --accent:#26264a;">
-    <div class="deco">{% include "wrapped/sticky_head.svg" %}</div>
-    <div class="brand">{% include "wrapped/sticky_logo.svg" %}</div>
+    <div class="deco">{% include "mapped/sticky_head.svg" %}</div>
+    <div class="brand">{% include "mapped/sticky_logo.svg" %}</div>
     <p class="kicker pop">All together, you spent</p>
     <p class="huge pop" style="--d:.2s">€<span data-count="{{ spent }}">{{ spent }}</span></p>
     <p class="kicker pop" style="--d:.4s">The board thanks you for your service. 🫡</p>
@@ -130,8 +130,8 @@
 
   {% with top_products.0 as first %}
   <section class="slide" style="--bg:#ffc93c; --fg:#1a1a2e; --accent:#ffd96e;">
-    <div class="deco alt">{% include "wrapped/sticky_head.svg" %}</div>
-    <div class="brand">{% include "wrapped/sticky_logo.svg" %}</div>
+    <div class="deco alt">{% include "mapped/sticky_head.svg" %}</div>
+    <div class="brand">{% include "mapped/sticky_logo.svg" %}</div>
     <p class="kicker pop">Your #1 of the year</p>
     {% if first.product_id__image %}
       <img class="cover pop" style="--d:.15s" src="{% get_media_prefix %}{{ first.product_id__image }}" alt="">
@@ -144,8 +144,8 @@
   {% endwith %}
 
   <section class="slide" style="--bg:#fbf1e3; --fg:#1a1a2e; --accent:#f3dcc4; --hl:var(--board);">
-    <div class="deco">{% include "wrapped/sticky_head.svg" %}</div>
-    <div class="brand">{% include "wrapped/sticky_logo.svg" %}</div>
+    <div class="deco">{% include "mapped/sticky_head.svg" %}</div>
+    <div class="brand">{% include "mapped/sticky_logo.svg" %}</div>
     <p class="big pop">Your top products</p>
     <ol class="list">
       {% for product in top_products %}
@@ -156,8 +156,8 @@
 
   {% if top_category %}
   <section class="slide" style="--bg:var(--board-dark); --fg:#fbf1e3; --accent:var(--board-dark-accent);">
-    <div class="deco alt">{% include "wrapped/sticky_head.svg" %}</div>
-    <div class="brand">{% include "wrapped/sticky_logo.svg" %}</div>
+    <div class="deco alt">{% include "mapped/sticky_head.svg" %}</div>
+    <div class="brand">{% include "mapped/sticky_logo.svg" %}</div>
     <p class="kicker pop">Your top category was</p>
     <p class="huge pop" style="--d:.2s">{{ top_category.product_id__category__name }}</p>
     <p class="kicker pop" style="--d:.4s">{{ top_category.total }} items. You know what you like.</p>
@@ -165,8 +165,8 @@
   {% endif %}
 
   <section class="slide" style="--bg:var(--board-light); --fg:var(--board-dark); --accent:var(--board-lighter);">
-    <div class="deco">{% include "wrapped/sticky_head.svg" %}</div>
-    <div class="brand">{% include "wrapped/sticky_logo.svg" %}</div>
+    <div class="deco">{% include "mapped/sticky_head.svg" %}</div>
+    <div class="brand">{% include "mapped/sticky_logo.svg" %}</div>
     <p class="kicker pop">Of everything you bought,</p>
     <p class="huge pop" style="--d:.2s"><span data-count="{{ alcohol_pct }}">{{ alcohol_pct }}</span>%</p>
     <p class="kicker pop" style="--d:.35s">was alcoholic. 🍺</p>
@@ -179,8 +179,8 @@
   </section>
 
   <section class="slide" style="--bg:#1a1a2e; --fg:#fbf1e3; --accent:#26264a;">
-    <div class="deco alt">{% include "wrapped/sticky_head.svg" %}</div>
-    <div class="brand">{% include "wrapped/sticky_logo.svg" %}</div>
+    <div class="deco alt">{% include "mapped/sticky_head.svg" %}</div>
+    <div class="brand">{% include "mapped/sticky_logo.svg" %}</div>
     <p class="kicker pop">You were mostly spotted on</p>
     <p class="big pop" style="--d:.2s">{{ weekday }}s</p>
     <p class="kicker pop" style="--d:.4s">around</p>
@@ -188,10 +188,10 @@
   </section>
 
   <section class="slide" data-last style="--bg:var(--board); --fg:#fbf1e3; --accent:var(--board-deep);">
-    <div class="deco">{% include "wrapped/sticky_head.svg" %}</div>
-    <div class="brand">{% include "wrapped/sticky_logo.svg" %}</div>
+    <div class="deco">{% include "mapped/sticky_head.svg" %}</div>
+    <div class="brand">{% include "mapped/sticky_logo.svg" %}</div>
     <div class="card pop">
-      <p class="kicker">{{ user_info.name }}'s Mongoose Wrapped</p>
+      <p class="kicker">{{ user_info.name }}'s Mongoose Mapped</p>
       <div class="grid">
         <div><p class="label">Top products</p><ol>{% for product in top_products|slice:":5" %}<li>{{ product.product_id__name }}</li>{% endfor %}</ol></div>
         <div>
@@ -208,8 +208,8 @@
   </section>
   {% else %}
   <section class="slide" data-last style="--bg:var(--board); --fg:#fbf1e3; --accent:var(--board-deep);">
-    <div class="deco alt">{% include "wrapped/sticky_head.svg" %}</div>
-    <div class="brand">{% include "wrapped/sticky_logo.svg" %}</div>
+    <div class="deco alt">{% include "mapped/sticky_head.svg" %}</div>
+    <div class="brand">{% include "mapped/sticky_logo.svg" %}</div>
     <p class="huge pop">Nothing yet…</p>
     <p class="kicker pop" style="--d:.2s">You didn't buy anything this year. Come by the room!</p>
     <a class="btn pop" style="--d:.4s" href="/">Back to Mongoose</a>
@@ -245,7 +245,7 @@
       void b.offsetWidth; // restart the fill animation
       if (k === current) b.classList.add("active");
     });
-    // Count numbers up, Spotify style
+    // Count numbers up
     slides[current].querySelectorAll("[data-count]").forEach(el => {
       const end = parseFloat(el.dataset.count), decimals = el.dataset.count.includes(".") ? 2 : 0;
       const start = performance.now();
@@ -343,7 +343,7 @@
       const chosen = [...thumbs.querySelectorAll(".selected .slide")];
       queue = await Promise.all(chosen.map(async (slide, k) => {
         const blob = await htmlToImage.toBlob(slide, { width: 360, height: 640, pixelRatio: 3 });
-        return new File([blob], `mongoose-wrapped-${k + 1}.png`, { type: "image/png" });
+        return new File([blob], `mongoose-mapped-${k + 1}.png`, { type: "image/png" });
       }));
       total = queue.length;
       if (!navigator.canShare?.({ files: queue })) {

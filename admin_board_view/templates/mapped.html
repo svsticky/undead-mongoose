@@ -106,7 +106,7 @@
     <div class="deco">{% include "mapped/sticky_head.svg" %}</div>
     <div class="brand">{% include "mapped/sticky_logo.svg" %}</div>
     <p class="kicker pop">Hey {{ user_info.name }} 👋</p>
-    <p class="huge pop" style="--d:.15s">Your {{ since.year }}/{% now "y" %}</p>
+    <p class="huge pop" style="--d:.15s">Your {{ since|date:"Y" }}/{{ until|date:"y" }}</p>
     <p class="big pop" style="--d:.3s">Mongoose Mapped</p>
     <p class="small pop" style="--d:.5s">Tap to continue →</p>
   </section>

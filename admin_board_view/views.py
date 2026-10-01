@@ -89,21 +89,37 @@ def get_user_home_context(request):
     }
 
 
-def mapped_open(today=None):
-    """Mongoose Mapped is shown yearly between the configured start/end day (default: June)."""
-    today = today or timezone.localdate()
+def mapped_window():
+    """(month, day) of the yearly Mongoose Mapped start and end, as set by the board (default: June).
+    Only month/day count, so the board's dates keep working in later years."""
     config = Configuration.objects.first()
-    start = (config and config.mapped_start) or date(today.year, 6, 1)
-    end = (config and config.mapped_end) or date(today.year, 6, 30)
-    # Compare month/day only so the board's dates keep working in later years.
-    return (start.month, start.day) <= (today.month, today.day) <= (end.month, end.day)
+    start = (config and config.mapped_start) or date(2000, 6, 1)
+    end = (config and config.mapped_end) or date(2000, 6, 30)
+    return (start.month, start.day), (end.month, end.day)
+
+
+def mapped_open(today=None):
+    today = today or timezone.localdate()
+    start, end = mapped_window()
+    return start <= (today.month, today.day) <= end
+
+
+def mapped_period(today=None):
+    """[since, until) of the academic year belonging to the most recent Mapped window, so outside
+    the window (e.g. a board preview in October) it shows the year that was recapped, not the
+    first weeks of the new one."""
+    today = today or timezone.localdate()
+    start, _ = mapped_window()
+    end_year = today.year if (today.month, today.day) >= start else today.year - 1
+    return date(end_year - 1, 9, 1), date(end_year, 9, 1)
 
 
 def mapped_stats(user, today=None):
-    """Purchase stats for `user` over the current academic year (from 1 September)."""
-    today = today or timezone.localdate()
-    since = date(today.year - (today.month < 9), 9, 1)
-    sales = SaleTransaction.objects.filter(user_id=user, cancelled=False, date__date__gte=since)
+    """Purchase stats for `user` over the academic year given by mapped_period."""
+    since, until = mapped_period(today)
+    sales = SaleTransaction.objects.filter(
+        user_id=user, cancelled=False, date__date__gte=since, date__date__lt=until
+    )
     products = ProductTransactions.objects.filter(transaction_id__in=sales)
 
     def top(qs, field, n=1):
@@ -115,10 +131,11 @@ def mapped_stats(user, today=None):
     items = products.aggregate(s=Sum("amount"))["s"] or 0
     alcoholic = products.filter(product_id__category__alcoholic=True).aggregate(s=Sum("amount"))["s"] or 0
     ideal_topups = IDealTransaction.objects.filter(
-        user_id=user, status=PaymentStatus.PAID, date__date__gte=since
+        user_id=user, status=PaymentStatus.PAID, date__date__gte=since, date__date__lt=until
     ).count()
     return {
         "since": since,
+        "until": until,
         "visits": sales.count(),
         "spent": sales.aggregate(s=Sum("transaction_sum"))["s"] or 0,
         "items": items,
@@ -150,9 +167,11 @@ def mapped_demo(request):
     if not settings.DEBUG:
         raise Http404
     products = [("Cola Zero", 61), ("Mars", 40), ("Tosti", 22), ("Fanta Cassis", 18), ("Twix", 9)]
+    since, until = mapped_period()
     return render(request, "mapped.html", {
         "user_info": {"name": "Demo"},
-        "since": date(timezone.localdate().year - 1, 9, 1),
+        "since": since,
+        "until": until,
         "visits": 142,
         "items": 231,
         "spent": Decimal("187.40"),

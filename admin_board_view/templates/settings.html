@@ -57,6 +57,13 @@
           <label for="alc_time">Alcohol sale time</label>
           <input id="alc_time" class="form-control" type="time" value="{{ configuration.alc_time|date:'H:i:s' }}">
         </div>
+        <div class="mt-3">
+          <label>Mongoose Wrapped visible from / until (yearly, leave empty for all of June)</label>
+          <div class="input-group">
+            <input id="wrapped_start" class="form-control" type="date" value="{{ configuration.wrapped_start|date:'Y-m-d' }}">
+            <input id="wrapped_end" class="form-control" type="date" value="{{ configuration.wrapped_end|date:'Y-m-d' }}">
+          </div>
+        </div>
       </div>
       <div class="card-footer">
         <div class="btn-group btn-group-justified w-100">

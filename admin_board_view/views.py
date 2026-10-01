@@ -1,11 +1,12 @@
 import json
 from operator import itemgetter
-from django.db.models import Sum
+from django.db.models import Count, Sum
+from django.db.models.functions import ExtractHour, ExtractWeekDay
 from django.http.response import JsonResponse
 from django.shortcuts import render, HttpResponseRedirect
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 from django.utils import timezone
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from itertools import groupby
 
 from admin_board_view.middleware import dashboard_authenticated, dashboard_admin
@@ -83,8 +84,86 @@ def get_user_home_context(request):
         "PaymentStatus": PaymentStatus,
         "TRANSACTION_FEE": settings.TRANSACTION_FEE,
         "error": request.GET.get("error"),
-        "cards": cards
+        "cards": cards,
+        "wrapped_open": wrapped_open(),
     }
+
+
+def wrapped_open(today=None):
+    """Mongoose Wrapped is shown yearly between the configured start/end day (default: June)."""
+    today = today or timezone.localdate()
+    config = Configuration.objects.first()
+    start = (config and config.wrapped_start) or date(today.year, 6, 1)
+    end = (config and config.wrapped_end) or date(today.year, 6, 30)
+    # Compare month/day only so the board's dates keep working in later years.
+    return (start.month, start.day) <= (today.month, today.day) <= (end.month, end.day)
+
+
+def wrapped_stats(user, today=None):
+    """Purchase stats for `user` over the current academic year (from 1 September)."""
+    today = today or timezone.localdate()
+    since = date(today.year - (today.month < 9), 9, 1)
+    sales = SaleTransaction.objects.filter(user_id=user, cancelled=False, date__date__gte=since)
+    products = ProductTransactions.objects.filter(transaction_id__in=sales)
+
+    def top(qs, field, n=1):
+        return list(qs.values(field).annotate(total=Count("id")).order_by("-total")[:n])
+
+    weekday = top(sales.annotate(day=ExtractWeekDay("date")), "day")
+    hour = top(sales.annotate(hour=ExtractHour("date")), "hour")
+    days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+    items = products.aggregate(s=Sum("amount"))["s"] or 0
+    alcoholic = products.filter(product_id__category__alcoholic=True).aggregate(s=Sum("amount"))["s"] or 0
+    ideal_topups = IDealTransaction.objects.filter(
+        user_id=user, status=PaymentStatus.PAID, date__date__gte=since
+    ).count()
+    return {
+        "since": since,
+        "visits": sales.count(),
+        "spent": sales.aggregate(s=Sum("transaction_sum"))["s"] or 0,
+        "items": items,
+        "alcohol_pct": round(100 * alcoholic / items) if items else 0,
+        "ideal_topups": ideal_topups,
+        "ideal_fees": ideal_topups * settings.TRANSACTION_FEE,
+        "top_products": products.values("product_id__name", "product_id__image")
+            .annotate(total=Sum("amount")).order_by("-total")[:5],
+        "top_category": products.values("product_id__category__name")
+            .annotate(total=Sum("amount")).order_by("-total").first(),
+        "weekday": days[weekday[0]["day"] - 1] if weekday else None,
+        "hour": hour[0]["hour"] if hour else None,
+    }
+
+
+@dashboard_authenticated
+def wrapped(request):
+    # Only ever the logged-in user's own data; board members may preview outside the window.
+    if not (wrapped_open() or request.user.is_superuser):
+        return HttpResponseRedirect("/")
+    user = User.objects.filter(user_id=request.user.username).first()
+    if not user:
+        return HttpResponseRedirect("/")
+    return render(request, "wrapped.html", {"user_info": user, **wrapped_stats(user)})
+
+
+def wrapped_demo(request):
+    """Wrapped with fake data, for working on the design locally. Only exists when DEBUG is on."""
+    if not settings.DEBUG:
+        raise Http404
+    products = [("Cola Zero", 61), ("Mars", 40), ("Tosti", 22), ("Fanta Cassis", 18), ("Twix", 9)]
+    return render(request, "wrapped.html", {
+        "user_info": {"name": "Demo"},
+        "since": date(timezone.localdate().year - 1, 9, 1),
+        "visits": 142,
+        "items": 231,
+        "spent": Decimal("187.40"),
+        "top_products": [{"product_id__name": n, "total": t} for n, t in products],
+        "top_category": {"product_id__category__name": "Fris", "total": 120},
+        "weekday": "Thursday",
+        "hour": 16,
+        "alcohol_pct": 23,
+        "ideal_topups": 7,
+        "ideal_fees": 7 * settings.TRANSACTION_FEE,
+    })
 
 
 # @dashboard_authenticated
@@ -375,6 +454,8 @@ def settings_update(request):
         configuration = Configuration.objects.get(pk=1)
         settings = json.loads(request.POST.dict()["settings"])
         configuration.alc_time = settings["alc_time"]
+        configuration.wrapped_start = settings.get("wrapped_start")
+        configuration.wrapped_end = settings.get("wrapped_end")
         configuration.save()
         return JsonResponse({"msg": "Updated the mongoose configuration"})
     except Exception as e:

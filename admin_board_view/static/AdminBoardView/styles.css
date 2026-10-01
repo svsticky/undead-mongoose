@@ -1,3 +1,8 @@
+/* Color of the current board, update this when a new board starts. Mongoose Wrapped derives its palette from it too. */
+:root {
+  --board-color: #b21b21;
+}
+
 /* Mobile specific CSS */
 @media (max-width: 768px) {
   /* General settings */
@@ -32,11 +37,11 @@
 }
 
 .board-color {
-  background-color: #b21b21;
+  background-color: var(--board-color);
 }
 
 .text-board {
-  color: #b21b21;
+  color: var(--board-color);
 }
 
 .disabled-product {

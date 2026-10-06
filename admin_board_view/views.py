@@ -200,6 +200,7 @@ def users(request, user_id=None):
             product_sale_groups.append(
                 {"key": designation, "values": list(member_group)}
             )
+        product_sale_groups.sort(reverse = True, key = lambda x: x["key"].date)
 
         cards = []
         for i, card in enumerate(Card.objects.all().filter(user_id=user.id)):

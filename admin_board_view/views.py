@@ -1,11 +1,12 @@
 import json
 from operator import itemgetter
-from django.db.models import Sum
+from django.db.models import Count, Sum
+from django.db.models.functions import ExtractHour, ExtractWeekDay
 from django.http.response import JsonResponse
 from django.shortcuts import render, HttpResponseRedirect
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 from django.utils import timezone
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from itertools import groupby
 
 from admin_board_view.middleware import dashboard_authenticated, dashboard_admin
@@ -83,8 +84,105 @@ def get_user_home_context(request):
         "PaymentStatus": PaymentStatus,
         "TRANSACTION_FEE": settings.TRANSACTION_FEE,
         "error": request.GET.get("error"),
-        "cards": cards
+        "cards": cards,
+        "mapped_open": mapped_open(),
     }
+
+
+def mapped_window():
+    """(month, day) of the yearly Mongoose Mapped start and end, as set by the board (default: June).
+    Only month/day count, so the board's dates keep working in later years."""
+    config = Configuration.objects.first()
+    start = (config and config.mapped_start) or date(2000, 6, 1)
+    end = (config and config.mapped_end) or date(2000, 6, 30)
+    return (start.month, start.day), (end.month, end.day)
+
+
+def mapped_open(today=None):
+    today = today or timezone.localdate()
+    start, end = mapped_window()
+    return start <= (today.month, today.day) <= end
+
+
+def mapped_period(today=None):
+    """[since, until) of the academic year belonging to the most recent Mapped window, so outside
+    the window (e.g. a board preview in October) it shows the year that was recapped, not the
+    first weeks of the new one."""
+    today = today or timezone.localdate()
+    start, _ = mapped_window()
+    end_year = today.year if (today.month, today.day) >= start else today.year - 1
+    return date(end_year - 1, 9, 1), date(end_year, 9, 1)
+
+
+def mapped_stats(user, today=None):
+    """Purchase stats for `user` over the academic year given by mapped_period."""
+    since, until = mapped_period(today)
+    sales = SaleTransaction.objects.filter(
+        user_id=user, cancelled=False, date__date__gte=since, date__date__lt=until
+    )
+    products = ProductTransactions.objects.filter(transaction_id__in=sales)
+
+    def top(qs, field, n=1):
+        return list(qs.values(field).annotate(total=Count("id")).order_by("-total")[:n])
+
+    weekday = top(sales.annotate(day=ExtractWeekDay("date")), "day")
+    hour = top(sales.annotate(hour=ExtractHour("date")), "hour")
+    days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+    items = products.aggregate(s=Sum("amount"))["s"] or 0
+    alcoholic = products.filter(product_id__category__alcoholic=True).aggregate(s=Sum("amount"))["s"] or 0
+    ideal_topups = IDealTransaction.objects.filter(
+        user_id=user, status=PaymentStatus.PAID, date__date__gte=since, date__date__lt=until
+    ).count()
+    return {
+        "since": since,
+        "until": until,
+        "visits": sales.count(),
+        "spent": sales.aggregate(s=Sum("transaction_sum"))["s"] or 0,
+        "items": items,
+        "alcohol_pct": round(100 * alcoholic / items) if items else 0,
+        "ideal_topups": ideal_topups,
+        "ideal_fees": ideal_topups * settings.TRANSACTION_FEE,
+        "top_products": products.values("product_id__name", "product_id__image")
+            .annotate(total=Sum("amount")).order_by("-total")[:5],
+        "top_category": products.values("product_id__category__name")
+            .annotate(total=Sum("amount")).order_by("-total").first(),
+        "weekday": days[weekday[0]["day"] - 1] if weekday else None,
+        "hour": hour[0]["hour"] if hour else None,
+    }
+
+
+@dashboard_authenticated
+def mapped(request):
+    # Only ever the logged-in user's own data; board members may preview outside the window.
+    if not (mapped_open() or request.user.is_superuser):
+        return HttpResponseRedirect("/")
+    user = User.objects.filter(user_id=request.user.username).first()
+    if not user:
+        return HttpResponseRedirect("/")
+    return render(request, "mapped.html", {"user_info": user, **mapped_stats(user)})
+
+
+def mapped_demo(request):
+    """Mapped with fake data, for working on the design locally. Only exists when DEBUG is on."""
+    if not settings.DEBUG:
+        raise Http404
+    products = [("Cola Zero", 61), ("Mars", 40), ("Tosti", 22), ("Fanta Cassis", 18), ("Twix", 9)]
+    since, until = mapped_period()
+    return render(request, "mapped.html", {
+        "user_info": {"name": "Demo"},
+        "since": since,
+        "until": until,
+        "visits": 142,
+        "items": 231,
+        "spent": Decimal("187.40"),
+        "top_products": [{"product_id__name": n, "total": t} for n, t in products],
+        "top_category": {"product_id__category__name": "Fris", "total": 120},
+        "weekday": "Thursday",
+        "hour": 16,
+        "alcohol_pct": 23,
+        "ideal_topups": 7,
+        "ideal_fees": 7 * settings.TRANSACTION_FEE,
+    })
 
 
 # @dashboard_authenticated
@@ -376,6 +474,8 @@ def settings_update(request):
         configuration = Configuration.objects.get(pk=1)
         settings = json.loads(request.POST.dict()["settings"])
         configuration.alc_time = settings["alc_time"]
+        configuration.mapped_start = settings.get("mapped_start")
+        configuration.mapped_end = settings.get("mapped_end")
         configuration.save()
         return JsonResponse({"msg": "Updated the mongoose configuration"})
     except Exception as e:

@@ -247,14 +247,21 @@ document
 
     paginationLinks.forEach((link) => {
       const targetUrl = new URL(link.getAttribute("href"), window.location.href);
-      const mergedParameters = new URLSearchParams(window.location.search);
-      const targetParameterNames = new Set(targetUrl.searchParams.keys());
+      const currentParameters = new URLSearchParams(window.location.search);
+      const mergedParameters = new URLSearchParams();
 
-      targetParameterNames.forEach((name) => {
-        mergedParameters.delete(name);
+      ["sales", "top_ups"].forEach((name) => {
+        const value = currentParameters.get(name);
+
+        if (value) {
+          mergedParameters.set(name, value);
+        }
       });
+
       targetUrl.searchParams.forEach((value, name) => {
-        mergedParameters.append(name, value);
+        if (name === "sales" || name === "top_ups") {
+          mergedParameters.set(name, value);
+        }
       });
 
       targetUrl.search = mergedParameters.toString();

@@ -67,6 +67,23 @@ if (filter_input) {
   });
 }
 
+// Keep the scroll position when the page reloads itself (edit, sales, save, closing a modal)
+// The page scrolls inside <main> (see base.html), not the window
+const SCROLL_KEY = "products-scroll";
+const scrollContainer = document.querySelector("main");
+window.addEventListener("pagehide", () => {
+  try {
+    sessionStorage.setItem(SCROLL_KEY, scrollContainer.scrollTop);
+  } catch (e) {}
+});
+try {
+  const savedScroll = sessionStorage.getItem(SCROLL_KEY);
+  const referrer = document.referrer ? new URL(document.referrer) : null;
+  if (savedScroll !== null && referrer && referrer.origin === location.origin && referrer.pathname === location.pathname) {
+    scrollContainer.scrollTop = parseInt(savedScroll);
+  }
+} catch (e) {}
+
 const params = new URLSearchParams(window.location.search);
 if (params.get("edit")) {
   productModal.show()

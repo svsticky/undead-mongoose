@@ -25,6 +25,7 @@ from .models import (
     Configuration,
 )
 from datetime import date
+from django.db.models import Max
 from django.views.decorators.csrf import csrf_exempt
 import requests
 import threading
@@ -131,6 +132,15 @@ def get_products(request):
     alc_time = Configuration.objects.get(pk=1).alc_time
 
     user_favorites = user.favorites.filter(enabled=True)
+    recent_products = (
+        Product.objects.filter(
+            enabled=True,
+            producttransactions__transaction_id__user_id=user,
+            producttransactions__transaction_id__cancelled=False,
+        )
+        .annotate(last_bought=Max("producttransactions__transaction_id__date"))
+        .order_by("-last_bought")
+    )
     now = timezone.localtime(timezone.now())
 
     if now.time() > alc_time and age > 17:
@@ -138,14 +148,20 @@ def get_products(request):
     else:
         categories = Category.objects.filter(alcoholic=False)
         user_favorites = user_favorites.filter(category__alcoholic=False)
+        recent_products = recent_products.filter(category__alcoholic=False)
 
     serialized_categories = [c.serialize() for c in categories]
-    
+
     fav_category = {
         "name": "⭐",
         "products": [p.serialize() for p in user_favorites]
     }
-    serialized_categories.insert(0, fav_category)
+    recent_category = {
+        "name": "🕒",
+        "products": [p.serialize() for p in recent_products[:5]],
+    }
+    serialized_categories.insert(0, recent_category)
+    serialized_categories.insert(0, fav_category)  # favorites stay at index 0
 
     return JsonResponse(serialized_categories, safe=False)
 

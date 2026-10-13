@@ -89,29 +89,22 @@ def get_user_home_context(request):
     }
 
 
-def mapped_window():
-    """(month, day) of the yearly Mongoose Mapped start and end, as set by the board (default: June).
-    Only month/day count, so the board's dates keep working in later years."""
+def mapped_open(today=None):
+    """Mongoose Mapped is shown yearly between the configured start/end day (default: June)."""
+    today = today or timezone.localdate()
     config = Configuration.objects.first()
     start = (config and config.mapped_start) or date(2000, 6, 1)
     end = (config and config.mapped_end) or date(2000, 6, 30)
-    return (start.month, start.day), (end.month, end.day)
-
-
-def mapped_open(today=None):
-    today = today or timezone.localdate()
-    start, end = mapped_window()
-    return start <= (today.month, today.day) <= end
+    # Compare month/day only so the board's dates keep working in later years.
+    return (start.month, start.day) <= (today.month, today.day) <= (end.month, end.day)
 
 
 def mapped_period(today=None):
-    """[since, until) of the academic year belonging to the most recent Mapped window, so outside
-    the window (e.g. a board preview in October) it shows the year that was recapped, not the
-    first weeks of the new one."""
+    """[since, until) of the current academic year (1 September to 1 September). In June that's
+    the year being recapped; before that it's a preview of what the next Mapped will contain."""
     today = today or timezone.localdate()
-    start, _ = mapped_window()
-    end_year = today.year if (today.month, today.day) >= start else today.year - 1
-    return date(end_year - 1, 9, 1), date(end_year, 9, 1)
+    since = date(today.year - (today.month < 9), 9, 1)
+    return since, date(since.year + 1, 9, 1)
 
 
 def mapped_stats(user, today=None):

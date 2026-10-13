@@ -103,16 +103,29 @@ class MappedTests(TestCase):
         self.assertTrue(self.views.mapped_open(d(2027, 6, 15)))
         self.assertFalse(self.views.mapped_open(d(2027, 7, 1)))
 
-    def test_period_is_academic_year_of_latest_window(self):
+    def test_period_is_current_academic_year(self):
         d, period = self.date, self.views.mapped_period
-        self.assertEqual(period(d(2027, 6, 15)), (d(2026, 9, 1), d(2027, 9, 1)))
-        # A preview in October still shows the year that was just recapped, not the new one
-        self.assertEqual(period(d(2026, 10, 1)), (d(2025, 9, 1), d(2026, 9, 1)))
-        self.assertEqual(period(d(2027, 5, 31)), (d(2025, 9, 1), d(2026, 9, 1)))
-        # A window starting in May already covers the current year
-        self.config.mapped_start = d(2027, 5, 20)
-        self.config.save()
-        self.assertEqual(period(d(2027, 5, 25)), (d(2026, 9, 1), d(2027, 9, 1)))
+        year_2026_27 = (d(2026, 9, 1), d(2027, 9, 1))
+        for today in [d(2026, 9, 1), d(2026, 10, 13), d(2027, 6, 15), d(2027, 8, 31)]:
+            self.assertEqual(period(today), year_2026_27, today)
+        self.assertEqual(period(d(2027, 9, 1)), (d(2027, 9, 1), d(2028, 9, 1)))
+
+    def test_member_sees_purchases_made_through_checkout_api(self):
+        # The way a test server gets data: purchases rung up at the terminal today.
+        from django.conf import settings
+        from mongoose_app.models import Card
+        Card.objects.create(card_id="ABCD1234", active=True, user_id=self.admin_mongoose_user)  # no other purchases
+        cola = Product.objects.get(name="Cola")
+        for amount in [2, 1]:
+            response = self.client.post("/api/transaction", content_type="application/json",
+                                        HTTP_AUTHORIZATION=settings.API_TOKEN,
+                                        data={"uuid": "ABCD1234", "items": [{"id": cola.id, "amount": amount}]})
+            self.assertEqual(response.status_code, 201)
+        self.client.force_login(self.admin_auth_user)
+        response = self.client.get("/mapped")
+        self.assertNotContains(response, "Nothing yet")
+        self.assertContains(response, 'data-count="2"')  # 2 visits
+        self.assertContains(response, "Cola")
 
     def test_stats_only_count_purchases_in_period(self):
         from mongoose_app.models import SaleTransaction

@@ -513,7 +513,7 @@ def export_sale_transactions(request):
             # Add transaction fee row mollie payments
             if export_type == "mollie":
                 t_count = len(data)
-                response_string += f'"",5007,Mongoose transaction fee {settings.TRANSACTION_FEE:.2f} x {t_count},21,{t_count * settings.TRANSACTION_FEE:.2f},TRX\n'
+                response_string += f'"",07850,Mongoose transaction fee {settings.TRANSACTION_FEE:.2f} x {t_count},21,{t_count * settings.TRANSACTION_FEE:.2f},TRX\n'
 
             # Return the export "csv"
             return HttpResponse(response_string, content_type="text/csv")

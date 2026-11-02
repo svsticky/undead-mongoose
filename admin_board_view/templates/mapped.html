@@ -1,0 +1,368 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <title>Mongoose Mapped</title>
+  <link rel="icon" type="image/x-icon" href="{% static 'AdminBoardView/undead_mongoose.png' %}">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&display=swap" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.13/dist/html-to-image.js" integrity="sha384-Tha/42qsYmpYmQ07pX+nJzkKumO0BzKJxK/uzVc7xyBQxVCUgQBhQIG8L7vXK+9C" crossorigin="anonymous" defer></script>
+  <link rel="stylesheet" href="{% static 'AdminBoardView/styles.css' %}">
+  <style>
+    /* Palette follows the board color from styles.css, so it changes along with each new board. */
+    :root {
+      --board: var(--board-color, #b21b21);
+      --board-deep: color-mix(in srgb, var(--board) 80%, black);
+      --board-dark: color-mix(in srgb, var(--board) 55%, black);
+      --board-dark-accent: color-mix(in srgb, var(--board) 68%, black);
+      --board-light: color-mix(in srgb, var(--board) 28%, white);
+      --board-lighter: color-mix(in srgb, var(--board) 38%, white);
+    }
+    * { box-sizing: border-box; margin: 0; }
+    html, body { height: 100%; background: #000; font-family: "Bricolage Grotesque", system-ui, sans-serif; overflow: hidden; }
+    body { display: grid; place-items: center; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+
+    .stage { position: relative; overflow: hidden; width: min(100vw, calc(100dvh * 9 / 16)); height: 100dvh; touch-action: manipulation; container-type: inline-size; }
+    @media (min-width: 600px) { .stage { height: min(100dvh, 900px); width: calc(min(100dvh, 900px) * 9 / 16); border-radius: 18px; } }
+
+    /* Progress bars + header */
+    .top { position: absolute; z-index: 5; inset: 0 0 auto; padding: max(10px, env(safe-area-inset-top)) 10px 0; color: var(--ui, #fff); }
+    .bars { display: flex; gap: 4px; }
+    .bar { flex: 1; height: 3px; border-radius: 3px; background: color-mix(in srgb, currentColor 30%, transparent); overflow: hidden; }
+    .bar i { display: block; height: 100%; width: 0; background: currentColor; }
+    .bar.done i { width: 100%; }
+    .bar.active i { animation: fill var(--dur, 6s) linear forwards; }
+    .paused .bar.active i, .picking .bar.active i { animation-play-state: paused; }
+    @keyframes fill { to { width: 100%; } }
+    .head { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-weight: 800; font-size: 13px; }
+    .head a, .head button { color: inherit; text-decoration: none; font-size: 26px; line-height: 1; padding: 0 4px; background: none; border: 0; cursor: pointer; }
+    .head svg { width: 20px; height: 20px; vertical-align: -2px; }
+
+    /* Share picker */
+    .picker { position: absolute; inset: 0; z-index: 10; background: rgba(0,0,0,.92); color: #fff; padding: max(20px, env(safe-area-inset-top)) 18px 24px; display: flex; flex-direction: column; gap: 14px; }
+    .picker[hidden] { display: none; }
+    .thumbs { display: flex; flex-wrap: wrap; gap: 10px; overflow-y: auto; flex: 1; align-content: flex-start; padding: 4px; }
+    .thumb { position: relative; flex: none; width: calc((100% - 20px) / 3); aspect-ratio: 9 / 16; border-radius: 8px; overflow: hidden; outline: 3px solid transparent; cursor: pointer; }
+    .thumb.selected { outline-color: #ffc93c; }
+    .thumb.selected::after { content: "✓"; position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; border-radius: 50%; background: #ffc93c; color: #1a1a2e; display: grid; place-items: center; font-weight: 800; font-size: 13px; }
+    .mini { width: 360px; height: 640px; transform-origin: 0 0; container-type: inline-size; position: absolute; top: 0; left: 0; pointer-events: none; }
+    .mini .slide { display: flex; }
+    .mini .pop { animation: none !important; }
+    .mini .btn { display: none; }
+    .mini .deco { animation: none; }
+    .picker .btn { margin: 0; border: 0; width: 100%; font: inherit; font-weight: 800; background: var(--board); color: #fbf1e3; cursor: pointer; }
+    .picker .btn:disabled { opacity: .5; }
+    .picker .cancel { background: none; border: 0; color: #fff; font: inherit; font-weight: 500; cursor: pointer; }
+
+    /* Slides */
+    .slide { display: none; position: absolute; inset: 0; padding: 90px 28px 80px; background: var(--bg); color: var(--fg); flex-direction: column; justify-content: center; overflow: hidden; }
+    .slide.active { display: flex; }
+    .slide > * { position: relative; z-index: 1; }
+    .slide > .deco { position: absolute; z-index: 0; width: 85%; top: -6%; right: -30%; color: var(--accent); transform: rotate(14deg); animation: sway 9s ease-in-out infinite alternate; }
+    .slide > .deco.alt { top: auto; right: auto; bottom: -4%; left: -30%; transform: rotate(-18deg); }
+    .deco svg { display: block; width: 100%; height: auto; }
+    @keyframes sway { to { rotate: -8deg; translate: -4% 3%; } }
+    .slide > .brand { position: absolute; left: 28px; bottom: 26px; width: 92px; color: var(--fg); }
+    .brand svg { display: block; width: 100%; height: auto; }
+
+    .slide.active .pop { animation: up .7s cubic-bezier(.2, .9, .3, 1.3) both; animation-delay: var(--d, 0s); }
+    @keyframes up { from { opacity: 0; transform: translateY(40px) scale(.96); } }
+
+    .kicker { font-size: 22px; font-weight: 800; line-height: 1.2; }
+    .huge { font-size: 18cqw; font-weight: 800; line-height: .95; letter-spacing: -0.04em; margin: 8px 0; overflow-wrap: break-word; }
+    .big { font-size: 12cqw; font-weight: 800; line-height: 1; letter-spacing: -0.03em; margin: 6px 0; overflow-wrap: break-word; }
+    .small { font-size: 16px; font-weight: 500; margin-top: 14px; opacity: .85; }
+
+    .cover { width: 62%; aspect-ratio: 1; object-fit: cover; border-radius: 3px; transform: rotate(-3deg); box-shadow: 0 18px 40px rgba(0,0,0,.3); margin-bottom: 22px; background: var(--accent); display: grid; place-items: center; font-size: 90px; }
+
+    .list { list-style: none; padding: 0; margin-top: 18px; }
+    .list li { display: flex; align-items: baseline; gap: 14px; padding: 8px 0; font-size: 24px; font-weight: 800; }
+    .list b { font-size: 34px; font-weight: 800; min-width: 30px; color: var(--hl, inherit); }
+    .list span { font-size: 15px; font-weight: 500; opacity: .8; margin-left: auto; }
+
+    /* Summary card */
+    .card { background: #fbf1e3; color: #1a1a2e; border-radius: 3px; padding: 26px 22px 22px; transform: rotate(-2deg); box-shadow: 0 14px 30px rgba(0,0,0,.3); }
+    .card::before { content: ""; position: absolute; top: -12px; left: 50%; width: 90px; height: 24px; transform: translateX(-50%) rotate(3deg); background: rgba(255, 201, 60, .85); }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 16px; }
+    .label { font-size: 13px; font-weight: 500; opacity: .8; }
+    .val { font-size: 22px; font-weight: 800; line-height: 1.15; }
+    .card ol { padding-left: 18px; font-size: 15px; font-weight: 800; line-height: 1.5; }
+    .btn { display: block; margin-top: 18px; padding: 14px; text-align: center; border-radius: 999px; background: var(--fg); color: var(--bg); font-weight: 800; text-decoration: none; }
+  </style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="top">
+    <div class="bars" id="bars"></div>
+    <div class="head"><span>🦦 Mongoose Mapped</span><span>
+      <button id="share-open" aria-label="Share to Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></button>
+      <a href="/" aria-label="Close">×</a>
+    </span></div>
+  </div>
+
+  <section class="slide" style="--bg:var(--board); --fg:#fbf1e3; --accent:var(--board-deep);">
+    <div class="deco">{% include "mapped/sticky_head.svg" %}</div>
+    <div class="brand">{% include "mapped/sticky_logo.svg" %}</div>
+    <p class="kicker pop">Hey {{ user_info.name }} 👋</p>
+    <p class="huge pop" style="--d:.15s">Your {{ since|date:"Y" }}/{{ until|date:"y" }}</p>
+    <p class="big pop" style="--d:.3s">Mongoose Mapped</p>
+    <p class="small pop" style="--d:.5s">Tap to continue →</p>
+  </section>
+
+  {% if visits %}
+  <section class="slide" style="--bg:#fbf1e3; --fg:var(--board); --accent:#f3dcc4;">
+    <div class="deco alt">{% include "mapped/sticky_head.svg" %}</div>
+    <div class="brand">{% include "mapped/sticky_logo.svg" %}</div>
+    <p class="kicker pop">This year you tapped your card at the Mongoose</p>
+    <p class="huge pop" style="--d:.2s"><span data-count="{{ visits }}">{{ visits }}</span>×</p>
+    <p class="kicker pop" style="--d:.4s">That's {{ items }} snacks and drinks.</p>
+  </section>
+
+  <section class="slide" style="--bg:#1a1a2e; --fg:#ffc93c; --accent:#26264a;">
+    <div class="deco">{% include "mapped/sticky_head.svg" %}</div>
+    <div class="brand">{% include "mapped/sticky_logo.svg" %}</div>
+    <p class="kicker pop">All together, you spent</p>
+    <p class="huge pop" style="--d:.2s">€<span data-count="{{ spent }}">{{ spent }}</span></p>
+    <p class="kicker pop" style="--d:.4s">The board thanks you for your service. 🫡</p>
+  </section>
+
+  {% with top_products.0 as first %}
+  <section class="slide" style="--bg:#ffc93c; --fg:#1a1a2e; --accent:#ffd96e;">
+    <div class="deco alt">{% include "mapped/sticky_head.svg" %}</div>
+    <div class="brand">{% include "mapped/sticky_logo.svg" %}</div>
+    <p class="kicker pop">Your #1 of the year</p>
+    {% if first.product_id__image %}
+      <img class="cover pop" style="--d:.15s" src="{% get_media_prefix %}{{ first.product_id__image }}" alt="">
+    {% else %}
+      <div class="cover pop" style="--d:.15s">🥇</div>
+    {% endif %}
+    <p class="big pop" style="--d:.3s">{{ first.product_id__name }}</p>
+    <p class="kicker pop" style="--d:.45s" >{{ first.total }} times. Iconic.</p>
+  </section>
+  {% endwith %}
+
+  <section class="slide" style="--bg:#fbf1e3; --fg:#1a1a2e; --accent:#f3dcc4; --hl:var(--board);">
+    <div class="deco">{% include "mapped/sticky_head.svg" %}</div>
+    <div class="brand">{% include "mapped/sticky_logo.svg" %}</div>
+    <p class="big pop">Your top products</p>
+    <ol class="list">
+      {% for product in top_products %}
+        <li class="pop" style="--d:{{ forloop.counter }}00ms"><b>{{ forloop.counter }}</b>{{ product.product_id__name }}<span>{{ product.total }}×</span></li>
+      {% endfor %}
+    </ol>
+  </section>
+
+  {% if top_category %}
+  <section class="slide" style="--bg:var(--board-dark); --fg:#fbf1e3; --accent:var(--board-dark-accent);">
+    <div class="deco alt">{% include "mapped/sticky_head.svg" %}</div>
+    <div class="brand">{% include "mapped/sticky_logo.svg" %}</div>
+    <p class="kicker pop">Your top category was</p>
+    <p class="huge pop" style="--d:.2s">{{ top_category.product_id__category__name }}</p>
+    <p class="kicker pop" style="--d:.4s">{{ top_category.total }} items. You know what you like.</p>
+  </section>
+  {% endif %}
+
+  <section class="slide" style="--bg:var(--board-light); --fg:var(--board-dark); --accent:var(--board-lighter);">
+    <div class="deco">{% include "mapped/sticky_head.svg" %}</div>
+    <div class="brand">{% include "mapped/sticky_logo.svg" %}</div>
+    <p class="kicker pop">Of everything you bought,</p>
+    <p class="huge pop" style="--d:.2s"><span data-count="{{ alcohol_pct }}">{{ alcohol_pct }}</span>%</p>
+    <p class="kicker pop" style="--d:.35s">was alcoholic. 🍺</p>
+    <p class="small pop" style="--d:.55s">
+      {% if alcohol_pct == 0 %}Straight edge. Respect.
+      {% elif alcohol_pct < 25 %}Mostly fris, with the occasional biertje.
+      {% elif alcohol_pct < 50 %}A healthy balance. Probably.
+      {% else %}The bar committee knows you by name.{% endif %}
+    </p>
+  </section>
+
+  <section class="slide" style="--bg:#1a1a2e; --fg:#fbf1e3; --accent:#26264a;">
+    <div class="deco alt">{% include "mapped/sticky_head.svg" %}</div>
+    <div class="brand">{% include "mapped/sticky_logo.svg" %}</div>
+    <p class="kicker pop">You were mostly spotted on</p>
+    <p class="big pop" style="--d:.2s">{{ weekday }}s</p>
+    <p class="kicker pop" style="--d:.4s">around</p>
+    <p class="huge pop" style="--d:.55s">{{ hour }}:00</p>
+  </section>
+
+  <section class="slide" data-last style="--bg:var(--board); --fg:#fbf1e3; --accent:var(--board-deep);">
+    <div class="deco">{% include "mapped/sticky_head.svg" %}</div>
+    <div class="brand">{% include "mapped/sticky_logo.svg" %}</div>
+    <div class="card pop">
+      <p class="kicker">{{ user_info.name }}'s Mongoose Mapped</p>
+      <div class="grid">
+        <div><p class="label">Top products</p><ol>{% for product in top_products|slice:":5" %}<li>{{ product.product_id__name }}</li>{% endfor %}</ol></div>
+        <div>
+          <p class="label">Top category</p><p class="val">{{ top_category.product_id__category__name|default:"-" }}</p>
+          <p class="label" style="margin-top:12px">Favourite day</p><p class="val">{{ weekday }}</p>
+        </div>
+        <div><p class="label">Spent</p><p class="val">€{{ spent }}</p></div>
+        <div><p class="label">Items</p><p class="val">{{ items }}</p></div>
+        <div style="grid-column: span 2"><p class="label">iDeal fees ({{ ideal_topups }}×)</p><p class="val">€{{ ideal_fees|floatformat:2 }}</p></div>
+      </div>
+    </div>
+    <p class="big pop" style="--d:.3s; margin-top:24px">See you at the ALW! 🎉</p>
+    <a class="btn pop" style="--d:.5s" href="/">Back to Mongoose</a>
+  </section>
+  {% else %}
+  <section class="slide" data-last style="--bg:var(--board); --fg:#fbf1e3; --accent:var(--board-deep);">
+    <div class="deco alt">{% include "mapped/sticky_head.svg" %}</div>
+    <div class="brand">{% include "mapped/sticky_logo.svg" %}</div>
+    <p class="huge pop">Nothing yet…</p>
+    <p class="kicker pop" style="--d:.2s">You didn't buy anything this year. Come by the room!</p>
+    <a class="btn pop" style="--d:.4s" href="/">Back to Mongoose</a>
+  </section>
+  {% endif %}
+
+  <div class="picker" id="picker" hidden>
+    <p class="kicker">Pick the stories you want to share</p>
+    <div class="thumbs" id="thumbs"></div>
+    <button class="btn" id="share-go">Share</button>
+    <button class="cancel" id="share-cancel">Cancel</button>
+  </div>
+</div>
+
+<script>
+  const stage = document.getElementById("stage");
+  const slides = [...stage.querySelectorAll(".slide")];
+  const bars = slides.map(() => {
+    const bar = document.createElement("div");
+    bar.className = "bar";
+    bar.appendChild(document.createElement("i"));
+    document.getElementById("bars").appendChild(bar);
+    return bar;
+  });
+  let current = 0;
+
+  function show(n) {
+    current = Math.max(0, Math.min(n, slides.length - 1));
+    slides.forEach((s, k) => s.classList.toggle("active", k === current));
+    stage.style.setProperty("--ui", getComputedStyle(slides[current]).getPropertyValue("--fg"));
+    bars.forEach((b, k) => {
+      b.className = "bar" + (k < current ? " done" : "");
+      void b.offsetWidth; // restart the fill animation
+      if (k === current) b.classList.add("active");
+    });
+    // Count numbers up
+    slides[current].querySelectorAll("[data-count]").forEach(el => {
+      const end = parseFloat(el.dataset.count), decimals = el.dataset.count.includes(".") ? 2 : 0;
+      const start = performance.now();
+      (function tick(now) {
+        const p = Math.min((now - start) / 1200, 1);
+        el.textContent = (end * (1 - Math.pow(1 - p, 3))).toFixed(decimals);
+        if (p < 1) requestAnimationFrame(tick);
+      })(start);
+    });
+  }
+
+  bars.forEach(b => b.addEventListener("animationend", () => {
+    if (current < slides.length - 1) show(current + 1);
+  }));
+
+  // Tap left third = back, elsewhere = next, hold = pause
+  let pressedAt = 0;
+  const ignore = e => e.target.closest("a, button, .picker");
+  stage.addEventListener("pointerdown", e => {
+    if (ignore(e)) return;
+    pressedAt = e.timeStamp;
+    stage.classList.add("paused");
+  });
+  stage.addEventListener("pointerup", e => {
+    if (ignore(e)) return;
+    stage.classList.remove("paused");
+    if (e.timeStamp - pressedAt > 250) return;
+    const { left, width } = stage.getBoundingClientRect();
+    show(current + (e.clientX - left < width / 3 ? -1 : 1));
+  });
+  stage.addEventListener("pointercancel", () => stage.classList.remove("paused"));
+  document.addEventListener("keydown", e => {
+    if (!picker.hidden) return;
+    if (e.key === "ArrowRight" || e.key === " ") show(current + 1);
+    if (e.key === "ArrowLeft") show(current - 1);
+  });
+
+  // Share: pick slides, render each to a 1080x1920 PNG and hand it to the share sheet (Instagram → Story).
+  const picker = document.getElementById("picker");
+  const thumbs = document.getElementById("thumbs");
+  const shareGo = document.getElementById("share-go");
+  let queue = [], total = 0;
+
+  slides.forEach(slide => {
+    const thumb = document.createElement("div");
+    const mini = document.createElement("div");
+    const clone = slide.cloneNode(true);
+    thumb.className = "thumb";
+    mini.className = "mini";
+    clone.classList.add("active");
+    mini.appendChild(clone);
+    thumb.appendChild(mini);
+    thumbs.appendChild(thumb);
+    thumb.addEventListener("click", () => { thumb.classList.toggle("selected"); queue = []; updateLabel(); });
+  });
+
+  function updateLabel() {
+    const n = thumbs.querySelectorAll(".selected").length;
+    shareGo.textContent = queue.length
+      ? `Share story ${total - queue.length + 1} of ${total}`
+      : `Share ${n} ${n === 1 ? "story" : "stories"}`;
+    shareGo.disabled = !queue.length && !n;
+  }
+
+  function closePicker() {
+    picker.hidden = true;
+    stage.classList.remove("picking");
+    queue = [];
+  }
+
+  function download(file) {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(file);
+    a.download = file.name;
+    a.click();
+  }
+
+  document.getElementById("share-open").addEventListener("click", () => {
+    picker.hidden = false;
+    stage.classList.add("picking");
+    [...thumbs.children].forEach((thumb, k) => {
+      thumb.classList.toggle("selected", k === current);
+      thumb.firstChild.style.transform = `scale(${thumb.clientWidth / 360})`;
+    });
+    queue = [];
+    updateLabel();
+  });
+  document.getElementById("share-cancel").addEventListener("click", closePicker);
+
+  shareGo.addEventListener("click", async () => {
+    if (!queue.length) {
+      // Render everything up front: share() must run straight from a tap, without a slow await before it.
+      shareGo.disabled = true;
+      shareGo.textContent = "Making your stories…";
+      const chosen = [...thumbs.querySelectorAll(".selected .slide")];
+      queue = await Promise.all(chosen.map(async (slide, k) => {
+        const blob = await htmlToImage.toBlob(slide, { width: 360, height: 640, pixelRatio: 3 });
+        return new File([blob], `mongoose-mapped-${k + 1}.png`, { type: "image/png" });
+      }));
+      total = queue.length;
+      if (!navigator.canShare?.({ files: queue })) {
+        queue.forEach(download); // desktop: no share sheet, just save the images
+        return closePicker();
+      }
+      return updateLabel();
+    }
+    // One image per share, because Instagram only offers "Story" for a single image.
+    try {
+      await navigator.share({ files: [queue[0]] });
+    } catch (e) {
+      return; // share sheet dismissed: keep this story in the queue
+    }
+    queue.shift();
+    queue.length ? updateLabel() : closePicker();
+  });
+
+  show(0);
+</script>
+</body>
+</html>

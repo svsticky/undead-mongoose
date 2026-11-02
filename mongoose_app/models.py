@@ -383,3 +383,6 @@ class Configuration(models.Model):
     alc_time = models.TimeField(
         default="17:00:00", help_text="Time from which alcohol sales are allowed"
     )
+    # Mongoose Mapped is visible between these dates; unset means all of June.
+    mapped_start = models.DateField(null=True, blank=True)
+    mapped_end = models.DateField(null=True, blank=True)

@@ -106,17 +106,11 @@ def change_card_name(request):
         return HttpResponse(status=200)
     return HttpResponse(status=400)
 
-@authenticated
-@require_http_methods(["GET"])
-def get_products(request):
+def can_buy_alcohol(user):
     """
-    Simply returns all products in the database
-    Should we handle here whether alcoholic products are returned?
+    Whether the user may buy alcoholic products right now: they must be 18+
+    and it must be past the configured alcohol time.
     """
-    # Obtain user from card info
-    card_id = request.GET.get("uuid")
-    card = Card.objects.filter(card_id=card_id).first()
-    user = User.objects.filter(user_id=card.user_id.user_id).first()
     # Calc age of user based on birthday. If Keycloak can't tell us their
     # birthday (unreachable, or the account was deleted there), treat them
     # as underage rather than guessing.
@@ -130,6 +124,50 @@ def get_products(request):
         else 0
     )
     alc_time = Configuration.objects.get(pk=1).alc_time
+    now = timezone.localtime(timezone.now())
+    return now.time() > alc_time and age > 17
+
+
+@authenticated
+@require_http_methods(["GET"])
+def get_product_by_barcode(request):
+    """
+    Returns the product with the given barcode, if the card's user may buy it.
+    400: no barcode given, 404: unknown/inactive card or unknown barcode,
+    410: product disabled, 403: alcoholic product the user may not buy (right now).
+    """
+    barcode = request.GET.get("barcode", "").strip()
+    if not barcode:
+        # Without this, filter(barcode=None/"") would match products without a barcode.
+        return HttpResponse("No barcode given", status=400)
+
+    card = Card.objects.filter(card_id=request.GET.get("uuid"), active=True).first()
+    if not card:
+        return HttpResponse("Card not found", status=404)
+
+    try:
+        product = Product.objects.get(barcode=barcode)
+    except Product.DoesNotExist:
+        return HttpResponse("Product not found", status=404)
+    if not product.enabled:
+        return HttpResponse("Product is no longer for sale", status=410)
+    if product.category.alcoholic and not can_buy_alcohol(card.user_id):
+        return HttpResponse("Product may not be sold to this user", status=403)
+
+    return JsonResponse(product.serialize())
+
+
+@authenticated
+@require_http_methods(["GET"])
+def get_products(request):
+    """
+    Simply returns all products in the database
+    Should we handle here whether alcoholic products are returned?
+    """
+    # Obtain user from card info
+    card_id = request.GET.get("uuid")
+    card = Card.objects.filter(card_id=card_id).first()
+    user = User.objects.filter(user_id=card.user_id.user_id).first()
 
     user_favorites = user.favorites.filter(enabled=True)
     recent_products = (
@@ -141,9 +179,7 @@ def get_products(request):
         .annotate(last_bought=Max("producttransactions__transaction_id__date"))
         .order_by("-last_bought")
     )
-    now = timezone.localtime(timezone.now())
-
-    if now.time() > alc_time and age > 17:
+    if can_buy_alcohol(user):
         categories = Category.objects.all()
     else:
         categories = Category.objects.filter(alcoholic=False)

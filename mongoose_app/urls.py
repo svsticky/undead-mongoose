@@ -6,6 +6,7 @@ urlpatterns = [
     # GET endpoints
     path("card", views.card, name="card"),
     path("products", views.get_products, name="get_products"),
+    path("product/barcode", views.get_product_by_barcode, name="get_product_by_barcode"),
     path("confirm", views.confirm_card, name="confirm_card"),
     # POST endpoints
     path("transaction", views.create_transaction, name="create_transaction"),

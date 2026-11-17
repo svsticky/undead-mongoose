@@ -42,6 +42,10 @@ class Product(models.Model):
     )
     vat = models.ForeignKey("VAT", on_delete=models.CASCADE, verbose_name="BTW")
     enabled = models.BooleanField(default=True)
+    # Barcodes are allowed to be null or blank, 1D barcodes (code 128, the biggest ones) are no more than 80 characters
+    # This breaks with QR codes, which can contain far mor data. 
+    # I don't think any dutch retail products use QR codes (they mostly use EAN-13)
+    barcode = models.CharField(max_length=80, unique=True, null=True, blank=True) 
 
     def __str__(self):
         return self.name
@@ -70,7 +74,13 @@ class Product(models.Model):
 
     def serialize(self) -> dict:
         url = settings.BASE_URL + self.image.url if self.image else None
-        return {"id": self.id, "name": self.name, "price": self.price, "image_url": url}
+        return {
+            "id": self.id,
+            "name": self.name,
+            "price": self.price,
+            "image_url": url,
+            "barcode": self.barcode,
+        }
 
 
 class ProductTransactions(models.Model):
@@ -373,10 +383,21 @@ class ProductForm(forms.ModelForm):
         widget=forms.Select(attrs={"class": "form-select"}),
         label=mark_safe('<label class="form-label">Category</label>'),
     )
+    # We should probably add some scanning feature later, manually typing barcodes is a hassle.
+    # You can setup the built-in android QR code scanner to scan EAN-13, i think that's the easiest way to go about it
+    barcode = forms.CharField(
+        widget=forms.TextInput(
+            # placeholder is EAN-13 (13 characters)
+            attrs={"placeholder": "8710398012345", "class": "form-control"}
+        ),
+        required=False,
+        empty_value=None,
+        label=mark_safe('<label class="form-label">Barcode</label>'),
+    )
 
     class Meta:
         model = Product
-        fields = ["name", "image", "price", "vat", "category", "enabled"]
+        fields = ["name", "image", "price", "vat", "category", "enabled", "barcode"]
 
 
 class Configuration(models.Model):

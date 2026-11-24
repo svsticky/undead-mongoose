@@ -158,9 +158,9 @@ class ProductByBarcodeTests(TestCase):
         drinks = Category.objects.create(name="Beer", alcoholic=True)
         self.user = User.objects.create(user_id="kc-user")
         Card.objects.create(card_id="CARD0001", active=True, user_id=self.user)
-        Product.objects.create(name="Wafel", price="0.50", vat=vat, category=food, barcode="111")
-        Product.objects.create(name="Old", price="1.00", vat=vat, category=food, barcode="222", enabled=False)
-        Product.objects.create(name="Pils", price="1.00", vat=vat, category=drinks, barcode="333")
+        Product.objects.create(name="Wafel", price="0.50", vat=vat, category=food, barcodes=["111", "112"])
+        Product.objects.create(name="Old", price="1.00", vat=vat, category=food, barcodes=["222"], enabled=False)
+        Product.objects.create(name="Pils", price="1.00", vat=vat, category=drinks, barcodes=["333"])
 
     def get(self, barcode, uuid="CARD0001"):
         return self.client.get(
@@ -178,7 +178,29 @@ class ProductByBarcodeTests(TestCase):
         response = self.get("111")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["name"], "Wafel")
-        self.assertEqual(response.json()["barcode"], "111")
+        self.assertEqual(response.json()["barcodes"], ["111", "112"])
+
+    # Any of a product's barcodes returns that same product.
+    def test_second_barcode_same_product(self):
+        response = self.get("112")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["name"], "Wafel")
+
+    # The management form splits lines, drops blanks/duplicates and rejects barcodes of other products.
+    def test_product_form_barcodes(self):
+        from mongoose_app.models import Product, ProductForm
+        wafel = Product.objects.get(name="Wafel")
+        data = {"name": "Wafel", "price": "0.50", "vat": wafel.vat_id, "category": wafel.category_id, "enabled": True}
+        form = ProductForm({**data, "barcodes": "111\r\n444\r\n\r\n444"}, instance=wafel)
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data["barcodes"], ["111", "444"])
+        form = ProductForm({**data, "barcodes": "333"}, instance=wafel)
+        self.assertFalse(form.is_valid())
+        # At most 10 barcodes per product.
+        form = ProductForm({**data, "barcodes": "\n".join(f"9{i}" for i in range(10))}, instance=wafel)
+        self.assertTrue(form.is_valid(), form.errors)
+        form = ProductForm({**data, "barcodes": "\n".join(f"9{i}" for i in range(11))}, instance=wafel)
+        self.assertFalse(form.is_valid())
 
     # A barcode no product has gives 404.
     def test_unknown_barcode(self):

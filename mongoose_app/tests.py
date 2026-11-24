@@ -145,3 +145,93 @@ class KeycloakIntegrationTests(TestCase):
         self.assertFalse(is_admin_user({"resource_access": {"mongoose-client": {"roles": ["user"]}}}))
         self.assertFalse(is_admin_user({}))
 
+
+
+@override_settings(API_TOKEN="test-api-token")
+class ProductByBarcodeTests(TestCase):
+    def setUp(self):
+        from mongoose_app.models import Category, Configuration, Product, VAT
+
+        Configuration.objects.update_or_create(pk=1, defaults={"alc_time": "00:00:00"})
+        vat = VAT.objects.create(percentage=9)
+        food = Category.objects.create(name="Food")
+        drinks = Category.objects.create(name="Beer", alcoholic=True)
+        self.user = User.objects.create(user_id="kc-user")
+        Card.objects.create(card_id="CARD0001", active=True, user_id=self.user)
+        Product.objects.create(name="Wafel", price="0.50", vat=vat, category=food, barcode="111")
+        Product.objects.create(name="Old", price="1.00", vat=vat, category=food, barcode="222", enabled=False)
+        Product.objects.create(name="Pils", price="1.00", vat=vat, category=drinks, barcode="333")
+
+    def get(self, barcode, uuid="CARD0001"):
+        return self.client.get(
+            "/api/product/barcode",
+            {"uuid": uuid, "barcode": barcode},
+            HTTP_AUTHORIZATION="test-api-token",
+        )
+
+    def birthday(self, value):
+        from unittest.mock import PropertyMock
+        return patch.object(User, "birthday", new_callable=PropertyMock, return_value=value)
+
+    # Enabled, non-alcoholic product is returned with its barcode.
+    def test_found(self):
+        response = self.get("111")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["name"], "Wafel")
+        self.assertEqual(response.json()["barcode"], "111")
+
+    # A barcode no product has gives 404.
+    def test_unknown_barcode(self):
+        self.assertEqual(self.get("999").status_code, 404)
+
+    # An unknown card gives 404, even for a valid barcode.
+    def test_unknown_card(self):
+        self.assertEqual(self.get("111", uuid="NOPE").status_code, 404)
+
+    # An inactive card gives 404, even for a valid barcode.
+    def test_inactive_card(self):
+        Card.objects.create(card_id="CARD0002", active=False, user_id=self.user)
+        self.assertEqual(self.get("111", uuid="CARD0002").status_code, 404)
+
+    # A request without a barcode gives 400 instead of matching products without one.
+    def test_missing_barcode(self):
+        response = self.client.get(
+            "/api/product/barcode", {"uuid": "CARD0001"}, HTTP_AUTHORIZATION="test-api-token"
+        )
+        self.assertEqual(response.status_code, 400)
+
+    # A whitespace-only barcode gives 400.
+    def test_blank_barcode(self):
+        self.assertEqual(self.get("  ").status_code, 400)
+
+    # Surrounding whitespace (e.g. a scanner's CR/LF) is stripped before matching.
+    def test_barcode_whitespace_stripped(self):
+        response = self.get(" 111\r\n")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["name"], "Wafel")
+
+    # A disabled product gives 410 (no longer for sale).
+    def test_disabled_product(self):
+        self.assertEqual(self.get("222").status_code, 410)
+
+    # A 16-year-old may not buy an alcoholic product (403).
+    def test_alcohol_underage(self):
+        from datetime import date
+        with self.birthday(date(date.today().year - 16, 1, 1)):
+            self.assertEqual(self.get("333").status_code, 403)
+
+    # Without a known birthday the user is treated as underage (403).
+    def test_alcohol_unknown_birthday(self):
+        with self.birthday(None):
+            self.assertEqual(self.get("333").status_code, 403)
+
+    # An adult may buy an alcoholic product after the alcohol time (200).
+    def test_alcohol_adult(self):
+        from datetime import date
+        with self.birthday(date(1990, 1, 1)):
+            self.assertEqual(self.get("333").status_code, 200)
+
+    # Requests without the API token are rejected (403).
+    def test_requires_token(self):
+        response = self.client.get("/api/product/barcode", {"uuid": "CARD0001", "barcode": "111"})
+        self.assertEqual(response.status_code, 403)

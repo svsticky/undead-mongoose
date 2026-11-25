@@ -2,6 +2,8 @@ from typing import Any, Dict, Iterable, Optional, Tuple
 import uuid
 from datetime import datetime
 from django.db import models
+from django.contrib.postgres.fields import ArrayField
+from django.contrib.postgres.forms import SimpleArrayField
 from django.utils.html import mark_safe
 from django.conf import settings
 from decimal import Decimal
@@ -42,10 +44,11 @@ class Product(models.Model):
     )
     vat = models.ForeignKey("VAT", on_delete=models.CASCADE, verbose_name="BTW")
     enabled = models.BooleanField(default=True)
-    # Barcodes are allowed to be null or blank, 1D barcodes (code 128, the biggest ones) are no more than 80 characters
+    # A product can have any number of barcodes (e.g. different packagings), uniqueness across
+    # products is enforced in ProductForm. 1D barcodes (code 128, the biggest ones) are no more than 80 characters
     # This breaks with QR codes, which can contain far mor data. 
     # I don't think any dutch retail products use QR codes (they mostly use EAN-13)
-    barcode = models.CharField(max_length=80, unique=True, null=True, blank=True) 
+    barcodes = ArrayField(models.CharField(max_length=80), size=10, default=list, blank=True)
 
     def __str__(self):
         return self.name
@@ -79,7 +82,7 @@ class Product(models.Model):
             "name": self.name,
             "price": self.price,
             "image_url": url,
-            "barcode": self.barcode,
+            "barcodes": self.barcodes,
         }
 
 
@@ -385,19 +388,28 @@ class ProductForm(forms.ModelForm):
     )
     # We should probably add some scanning feature later, manually typing barcodes is a hassle.
     # You can setup the built-in android QR code scanner to scan EAN-13, i think that's the easiest way to go about it
-    barcode = forms.CharField(
-        widget=forms.TextInput(
+    barcodes = SimpleArrayField(
+        forms.CharField(max_length=80, required=False),
+        delimiter="\n",
+        widget=forms.Textarea(
             # placeholder is EAN-13 (13 characters)
-            attrs={"placeholder": "8710398012345", "class": "form-control"}
+            attrs={"placeholder": "8710398012345", "rows": 3, "class": "form-control"}
         ),
         required=False,
-        empty_value=None,
-        label=mark_safe('<label class="form-label">Barcode</label>'),
+        label=mark_safe('<label class="form-label">Barcodes (one per line)</label>'),
     )
+
+    def clean_barcodes(self):
+        # Drop empty lines and duplicates (CharField already strips the \r of \r\n)
+        barcodes = list(dict.fromkeys(b for b in self.cleaned_data["barcodes"] if b))
+        taken = Product.objects.filter(barcodes__overlap=barcodes).exclude(pk=self.instance.pk)
+        if barcodes and taken.exists():
+            raise forms.ValidationError(f"Barcode already used by {taken.first().name}")
+        return barcodes
 
     class Meta:
         model = Product
-        fields = ["name", "image", "price", "vat", "category", "enabled", "barcode"]
+        fields = ["name", "image", "price", "vat", "category", "enabled", "barcodes"]
 
 
 class Configuration(models.Model):

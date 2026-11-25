@@ -138,16 +138,14 @@ def get_product_by_barcode(request):
     """
     barcode = request.GET.get("barcode", "").strip()
     if not barcode:
-        # Without this, filter(barcode=None/"") would match products without a barcode.
         return HttpResponse("No barcode given", status=400)
 
     card = Card.objects.filter(card_id=request.GET.get("uuid"), active=True).first()
     if not card:
         return HttpResponse("Card not found", status=404)
 
-    try:
-        product = Product.objects.get(barcode=barcode)
-    except Product.DoesNotExist:
+    product = Product.objects.filter(barcodes__contains=[barcode]).first()
+    if not product:
         return HttpResponse("Product not found", status=404)
     if not product.enabled:
         return HttpResponse("Product is no longer for sale", status=410)
